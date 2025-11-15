@@ -2,6 +2,16 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.10.
 
+
+
+La implementacion de la aplicacion web de Vocatio se realiza utilizando las siguientes tecnologias y herramientas:
+
+- Framework: Angular 18 (node.js v20+ - npm 10+)
+- Lenguaje: TypeScript
+- Librerias: RxJS, Angular Material
+- Herramientas de desarrollo: Visual Studio Code, Git
+
+
 ## Development server
 
 To start a local development server, run:
