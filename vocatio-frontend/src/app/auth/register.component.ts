@@ -4,10 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { authFormStyles } from './auth-form.styles';
 
+
+import { HttpClientModule } from '@angular/common/http';
+import { Register } from '../services/register';
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, HttpClientModule],
   template: `
     <div class="auth-card">
       <p class="eyebrow">Registro</p>
@@ -24,7 +27,7 @@ import { authFormStyles } from './auth-form.styles';
             #fullNameCtrl="ngModel"
             required
             autocomplete="name"
-            placeholder="María Torres"
+            placeholder="Susy Diaz"
             [class.invalid]="registerForm.submitted && fullNameCtrl.invalid"
           />
           <small *ngIf="registerForm.submitted && fullNameCtrl.invalid" class="field-error">
@@ -41,7 +44,7 @@ import { authFormStyles } from './auth-form.styles';
             #emailCtrl="ngModel"
             required
             autocomplete="email"
-            placeholder="correo@yopmail.com"
+            placeholder="tiasusy1963@yopmail.com"
             [class.invalid]="registerForm.submitted && emailCtrl.invalid"
           />
           <small *ngIf="registerForm.submitted && emailCtrl.invalid" class="field-error">
@@ -59,7 +62,7 @@ import { authFormStyles } from './auth-form.styles';
             required
             minlength="6"
             autocomplete="new-password"
-            placeholder="Crea una contraseña"
+            placeholder="Digita tu contraseña"
             [class.invalid]="
               registerForm.submitted && (passwordCtrl.invalid || registerData.password.length < 6)
             "
@@ -70,7 +73,7 @@ import { authFormStyles } from './auth-form.styles';
             "
             class="field-error"
           >
-            La contraseña debe tener al menos 6 caracteres.
+            La contraseña debe tener al menos 8 caracteres.
           </small>
         </label>
 
@@ -119,16 +122,22 @@ import { authFormStyles } from './auth-form.styles';
   `,
   styles: [authFormStyles]
 })
+
 export class RegisterComponent {
   protected registerData = {
     fullName: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    rememberMe: false
   };
 
   protected feedback = '';
   protected success = false;
+
+  constructor(private registerService: Register) {}
+
+
 
   protected handleRegister() {
     this.feedback = '';
@@ -154,7 +163,17 @@ export class RegisterComponent {
       return;
     }
 
+    // pasamos todas las validaciones
     this.success = true;
     this.feedback = 'Registro simulado completado. ¡Revisa tu correo para confirmar!';
+
+    this.registerService.postRegister({
+      email: this.registerData.email,
+      password: this.registerData.password,
+      rememberMe: this.registerData.rememberMe
+    }).subscribe({
+      next: (res) => console.log('Respuesta del servidor (texto):', res),
+      error: (err) => console.error('Error registro:', err)
+    });
   }
 }
