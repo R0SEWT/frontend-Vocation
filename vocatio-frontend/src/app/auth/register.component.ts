@@ -187,15 +187,28 @@ export class RegisterComponent {
 
     // pasamos todas las validaciones
     this.success = true;
-    this.feedback = 'Registro simulado completado. ¡Revisa tu correo para confirmar!';
 
     this.registerService.postRegister({
       email: this.registerData.email,
       password: this.registerData.password,
       rememberMe: this.registerData.rememberMe
     }).subscribe({
-      next: (res) => console.log('Respuesta del servidor (texto):', res),
-      error: (err) => console.error('Error registro:', err)
+      next: (res) => { 
+        console.log('Respuesta del servidor (texto):', res);
+        // mostrar el message de respuesta
+        this.success = true;
+        const res_dump = JSON.parse(res);
+        this.feedback = res_dump.message;
+      },
+      
+      error: (err) => {
+        console.error('Error registro:', err);
+
+        this.success = false;
+        const err_dump = JSON.parse(err.error);
+        this.feedback = err_dump.message;
+      }
+      
     });
   }
 }
