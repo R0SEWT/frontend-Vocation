@@ -1,4 +1,4 @@
-export const authFormStyles = `
+export const authCardStyles = `
 :host {
   display: block;
   width: 100%;
@@ -35,7 +35,9 @@ export const authFormStyles = `
   color: #cbd5f5;
 }
 
-.field input {
+.field input,
+.field button,
+.field select {
   background: #020617;
   border: 1px solid rgba(148, 163, 184, 0.4);
   color: #e2e8f0;
@@ -44,12 +46,15 @@ export const authFormStyles = `
   font-size: 1rem;
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus,
+.field button:focus-visible {
   border-color: transparent;
   outline: 2px solid #6366f1;
 }
 
-.field input.invalid {
+.field input.invalid,
+.field select.invalid {
   border-color: #fb7185;
 }
 
@@ -81,6 +86,13 @@ export const authFormStyles = `
   box-shadow: 0 18px 35px rgba(99, 102, 241, 0.35);
 }
 
+.secondary-action {
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  margin-top: 0.5rem;
+}
+
 .note {
   margin-top: 1rem;
   font-size: 0.85rem;
@@ -107,4 +119,16 @@ export const authFormStyles = `
   color: #fb7185;
 }
 
+.policy-list {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: #cbd5f5;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.policy-list li {
+  list-style: disc;
+  margin-left: 1.25rem;
+}
 `;

@@ -1,3 +1,4 @@
+export const authLayoutStyles = `
 :host {
   display: block;
   min-height: 100vh;
@@ -115,3 +116,4 @@
     padding: 1.5rem 1rem;
   }
 }
+`;
