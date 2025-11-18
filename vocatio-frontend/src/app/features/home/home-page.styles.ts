@@ -47,6 +47,8 @@ export const homePageStyles = `
   padding: 0.75rem 1.5rem;
   font-size: 0.95rem;
   font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .primary-action {
@@ -55,10 +57,20 @@ export const homePageStyles = `
   color: #fff;
 }
 
+.primary-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 35px rgba(99, 102, 241, 0.35);
+}
+
 .secondary-action {
   background: transparent;
   border: 1px solid rgba(148, 163, 184, 0.6);
   color: #cbd5f5;
+}
+
+.secondary-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(148, 163, 184, 0.2);
 }
 
 .status-card {

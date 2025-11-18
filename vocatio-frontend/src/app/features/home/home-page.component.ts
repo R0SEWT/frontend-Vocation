@@ -24,6 +24,7 @@ import { UserProfile } from '../../core/models/profile.models';
           </p>
           <div class="hero-actions">
             <button class="primary-action" (click)="refreshRecommendations()">Actualizar recomendaciones</button>
+            <button class="secondary-action" (click)="takeVocationalTest()">Realizar test vocacional</button>
             <button class="secondary-action" (click)="logout()">Cerrar sesión</button>
           </div>
           <div class="status-card" *ngIf="profile">
@@ -122,6 +123,10 @@ export class HomePageComponent implements OnInit {
 
     this.statusMessage = '';
     this.fetchRecommendations(areaIds);
+  }
+
+  takeVocationalTest(): void {
+    this.router.navigate(['/test']);
   }
 
   logout(): void {
