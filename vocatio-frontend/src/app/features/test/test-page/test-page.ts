@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { TestService } from '../../../core/services/test.service';
-import { TestQuestion, TestSubmission, TestResult } from '../../../core/models/learning.models';
+import { TestQuestion, TestSubmission, TestResult } from '../../../core/validators/models/learning.models';
 import { SessionService } from '../../../core/services/session.service';
 import { testPageStyles } from './test-page.styles';
 

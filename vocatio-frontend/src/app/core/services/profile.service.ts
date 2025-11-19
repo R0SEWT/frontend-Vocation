@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { PROFILE_ENDPOINTS } from '../constants/api.constants';
-import { ProfilePatchPayload, ProfileUpdatePayload, UserProfile } from '../models/profile.models';
+import { ProfilePatchPayload, ProfileUpdatePayload, UserProfile } from '../validators/models/profile.models';
 
 @Injectable({ providedIn: 'root' })
 export class ProfileService {

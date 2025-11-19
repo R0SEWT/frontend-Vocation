@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TEST_ENDPOINTS } from '../constants/api.constants';
-import { RecommendationsResponse } from '../models/learning.models';
+import { RecommendationsResponse } from '../validators/models/learning.models';
 
 @Injectable({ providedIn: 'root' })
 export class RecommendationService {

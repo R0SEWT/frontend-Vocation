@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { SessionService } from '../../../core/services/session.service';
-import { LoginPayload } from '../../../core/models/auth.models';
+import { LoginPayload } from '../../../core/validators/models/auth.models';
 import { authCardStyles } from '../../../shared/components/auth-card.styles';
 
 @Component({

@@ -8,7 +8,7 @@ import {
   LoginPayload,
   ChangePasswordPayload,
   DeleteAccountPayload
-} from '../models/auth.models';
+} from '../validators/models/auth.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

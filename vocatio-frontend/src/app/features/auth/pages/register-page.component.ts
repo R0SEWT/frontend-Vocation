@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { SessionService } from '../../../core/services/session.service';
-import { RegisterPayload } from '../../../core/models/auth.models';
+import { RegisterPayload } from '../../../core/validators/models/auth.models';
 import { authCardStyles } from '../../../shared/components/auth-card.styles';
 import { confirmPasswordValidator } from '../validators/confirm-password.validator';
 import { getPasswordPolicyErrors } from '../../../core/validators/password-policy.validator';

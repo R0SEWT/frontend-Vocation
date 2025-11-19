@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { LearningResource } from '../../core/models/learning.models';
+import { LearningResource } from '../../core/validators/models/learning.models';
 import { ProfileService } from '../../core/services/profile.service';
 import { RecommendationService } from '../../core/services/recommendation.service';
 import { SessionService } from '../../core/services/session.service';
 import { extractAreaIds } from '../../core/constants/interest-area.constants';
 import { homePageStyles } from './home-page.styles';
-import { UserProfile } from '../../core/models/profile.models';
+import { UserProfile } from '../../core/validators/models/profile.models';
 
 @Component({
   selector: 'app-home-page',

@@ -2,7 +2,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TEST_ENDPOINTS } from '../constants/api.constants';
-import { TestQuestion, TestSubmission, TestResult } from '../models/learning.models';
+import { TestQuestion, TestSubmission, TestResult } from '../validators/models/learning.models';
 
 @Injectable({ providedIn: 'root' })
 export class TestService {

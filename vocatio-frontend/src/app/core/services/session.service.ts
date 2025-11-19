@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { STORAGE_KEYS } from '../constants/storage.constants';
-import { Tokens } from '../models/auth.models';
+import { Tokens } from '../validators/models/auth.models';
 
 @Injectable({
   providedIn: 'root'
