@@ -29,8 +29,8 @@ import { UserProfile } from '../../core/models/profile.models';
           </div>
           <div class="status-card" *ngIf="profile">
             <h3>Estado del perfil</h3>
-            <p>Edad estimada: {{ profile?.age ?? '—' }}</p>
-            <p>Intereses capturados: {{ profile?.interests?.length || 0 }}</p>
+            <p>Edad estimada: {{ profile.age ?? '—' }}</p>
+            <p>Intereses capturados: {{ profile.interests?.length || 0 }}</p>
             <p>{{ recommendationMessage }}</p>
           </div>
         </div>

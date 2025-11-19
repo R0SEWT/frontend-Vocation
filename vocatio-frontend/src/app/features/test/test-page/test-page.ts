@@ -1,0 +1,353 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { TestService } from '../../../core/services/test.service';
+import { TestQuestion, TestSubmission, TestResult } from '../../../core/models/learning.models';
+import { SessionService } from '../../../core/services/session.service';
+import { testPageStyles } from './test-page.styles';
+
+@Component({
+  selector: 'app-test-page',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div class="test-shell">
+      <div class="test-hero" *ngIf="!loading && !error">
+        <div class="hero-copy">
+          <p class="eyebrow">Test Vocacional</p>
+          <h1>Descubre tus intereses profesionales</h1>
+          <p>Responde las siguientes preguntas para conocer tus áreas de interés y posibles carreras.</p>
+        </div>
+      </div>
+
+      <div class="test-progress" *ngIf="!loading && !error && questions.length > 0">
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="progressPercentage"></div>
+        </div>
+        <span class="progress-text">{{ currentQuestionIndex + 1 }} / {{ questions.length }}</span>
+      </div>
+
+      <div class="loading-section" *ngIf="loading">
+        <div class="loading-card">
+          <p>Cargando preguntas...</p>
+        </div>
+      </div>
+
+      <div class="error-section" *ngIf="error && !loading">
+        <div class="error-card">
+          <h2>Error</h2>
+          <p>{{ error }}</p>
+          <button class="primary-action" (click)="retakeTest()">Reintentar</button>
+        </div>
+      </div>
+
+      <div class="question-section" *ngIf="!loading && !error && currentQuestion && !showResults">
+        <div class="question-card">
+          <div class="question-header">
+            <span class="question-icon">💭</span>
+            <h2>{{ currentQuestion.question }}</h2>
+          </div>
+          <div class="options-grid">
+            <button
+              *ngFor="let option of currentQuestion.options"
+              class="option-button"
+              (click)="selectOption(option)"
+            >
+              {{ option.text }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="question-section" *ngIf="showResults">
+        <div class="results-card">
+          <h2>¡Test completado!</h2>
+          <p>Basado en tus respuestas, estas son tus áreas de interés principales:</p>
+          <div class="results-summary">
+            <h3>Áreas recomendadas:</h3>
+            <ul>
+              <li *ngFor="let area of topAreas">{{ area }}</li>
+            </ul>
+          </div>
+          <div class="results-actions">
+            <button class="primary-action" (click)="goToHome()">Ver recomendaciones</button>
+            <button class="secondary-action" (click)="retakeTest()">Repetir test</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions-section" *ngIf="!loading && !error && currentQuestion && !showResults">
+        <div class="navigation-actions">
+          <button
+            class="secondary-action"
+            (click)="goBack()"
+            [disabled]="currentQuestionIndex === 0"
+          >
+            Anterior
+          </button>
+          <button class="primary-action" (click)="goToHome()">Ir al inicio</button>
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [testPageStyles]
+})
+export class TestPage implements OnInit {
+  questions: TestQuestion[] = [];
+  loading = false;
+  error = '';
+  token: string = '';
+  assessmentId: string = '';
+
+  currentQuestionIndex = 0;
+  answers: string[] = [];
+  showResults = false;
+  topAreas: string[] = [];
+
+  constructor(
+    private router: Router,
+    private testService: TestService,
+    private session: SessionService
+  ) {}
+
+  ngOnInit(): void {
+    this.loading = true;
+    this.token = this.session.getAccessToken() || '';
+
+    // For now, directly load fallback questions to ensure the test works
+    // TODO: Re-enable API calls when backend is available
+    this.loadFallbackQuestions();
+
+    /*
+    this.testService.createAssessment(this.token).subscribe({
+      next: (resp) => {
+        this.assessmentId = resp.assessmentId;
+        this.loadQuestions();
+      },
+      error: () => {
+        this.error = 'No se pudo crear el test vocacional. Usando preguntas locales.';
+        this.loading = false;
+        this.loadFallbackQuestions();
+      }
+    });
+    */
+  }
+
+  private loadQuestions(): void {
+    this.testService.fetchQuestions(this.assessmentId, this.token).subscribe({
+      next: (questions: TestQuestion[]) => {
+        this.questions = questions;
+        this.loading = false;
+        this.resetTest();
+      },
+      error: (err) => {
+        console.error('Error loading questions:', err);
+        this.error = 'Error al cargar las preguntas. Usando preguntas locales.';
+        this.loading = false;
+        this.loadFallbackQuestions();
+      }
+    });
+  }
+
+  private resetTest(): void {
+    this.currentQuestionIndex = 0;
+    this.answers = [];
+    this.showResults = false;
+    this.topAreas = [];
+  }
+
+  get currentQuestion(): TestQuestion | null {
+    return this.questions[this.currentQuestionIndex] || null;
+  }
+
+  get progressPercentage(): number {
+    return ((this.currentQuestionIndex + 1) / this.questions.length) * 100;
+  }
+
+  selectOption(option: { id: string; text: string; value: string }): void {
+    this.answers.push(option.value);
+    if (this.currentQuestionIndex < this.questions.length - 1) {
+      this.currentQuestionIndex++;
+    } else {
+      this.submitTest();
+    }
+  }
+
+  goBack(): void {
+    if (this.currentQuestionIndex > 0) {
+      this.currentQuestionIndex--;
+      this.answers.pop();
+    }
+  }
+
+  private submitTest(): void {
+    const submission: TestSubmission = { answers: this.answers };
+    this.testService.submitTest(this.assessmentId, this.token, submission).subscribe({
+      next: (result: TestResult) => {
+        this.topAreas = result.topAreas;
+        this.showResults = true;
+      },
+      error: (err) => {
+        console.error('Error submitting test:', err);
+        this.calculateResultsLocally();
+      }
+    });
+  }
+
+  private loadFallbackQuestions(): void {
+    this.questions = [
+      {
+        id: '1',
+        question: '¿Qué actividades te hacen perder la noción del tiempo?',
+        options: [
+          { id: '1a', text: 'Resolver problemas matemáticos o lógicos', value: 'ciencias' },
+          { id: '1b', text: 'Crear arte o diseñar cosas', value: 'artes' },
+          { id: '1c', text: 'Ayudar a otras personas', value: 'social' },
+          { id: '1d', text: 'Trabajar con computadoras o tecnología', value: 'tecnologia' }
+        ]
+      },
+      {
+        id: '2',
+        question: 'En un proyecto grupal, ¿qué rol prefieres?',
+        options: [
+          { id: '2a', text: 'Líder organizando el trabajo', value: 'administracion' },
+          { id: '2b', text: 'Investigador buscando información', value: 'investigacion' },
+          { id: '2c', text: 'Creador desarrollando ideas', value: 'creativo' },
+          { id: '2d', text: 'Ejecutor implementando soluciones', value: 'practico' }
+        ]
+      },
+      {
+        id: '3',
+        question: '¿Qué tipo de libros te gusta leer?',
+        options: [
+          { id: '3a', text: 'Ciencia ficción o fantasía', value: 'creativo' },
+          { id: '3b', text: 'Biografías de científicos', value: 'ciencias' },
+          { id: '3c', text: 'Novelas de misterio', value: 'investigacion' },
+          { id: '3d', text: 'Libros de autoayuda', value: 'social' }
+        ]
+      },
+      {
+        id: '4',
+        question: '¿Qué asignatura te resulta más fácil?',
+        options: [
+          { id: '4a', text: 'Matemáticas', value: 'ciencias' },
+          { id: '4b', text: 'Lenguaje o literatura', value: 'artes' },
+          { id: '4c', text: 'Historia o ciencias sociales', value: 'social' },
+          { id: '4d', text: 'Informática o tecnología', value: 'tecnologia' }
+        ]
+      },
+      {
+        id: '5',
+        question: '¿Dónde te ves trabajando en el futuro?',
+        options: [
+          { id: '5a', text: 'En una oficina con computadoras', value: 'tecnologia' },
+          { id: '5b', text: 'En un laboratorio', value: 'ciencias' },
+          { id: '5c', text: 'En un estudio creativo', value: 'artes' },
+          { id: '5d', text: 'Ayudando a la comunidad', value: 'social' }
+        ]
+      },
+      {
+        id: '6',
+        question: '¿Qué tipo de problemas te gusta resolver?',
+        options: [
+          { id: '6a', text: 'Problemas científicos o técnicos', value: 'ciencias' },
+          { id: '6b', text: 'Problemas creativos o artísticos', value: 'artes' },
+          { id: '6c', text: 'Problemas sociales o humanos', value: 'social' },
+          { id: '6d', text: 'Problemas tecnológicos o informáticos', value: 'tecnologia' }
+        ]
+      },
+      {
+        id: '7',
+        question: 'En una discusión, ¿qué rol tomas?',
+        options: [
+          { id: '7a', text: 'Presentar argumentos lógicos', value: 'investigacion' },
+          { id: '7b', text: 'Expresar ideas creativas', value: 'creativo' },
+          { id: '7c', text: 'Mediar entre opiniones', value: 'social' },
+          { id: '7d', text: 'Organizar la conversación', value: 'administracion' }
+        ]
+      },
+      {
+        id: '8',
+        question: '¿Qué te motiva más en un trabajo?',
+        options: [
+          { id: '8a', text: 'El descubrimiento de nuevos conocimientos', value: 'investigacion' },
+          { id: '8b', text: 'La creación de algo nuevo', value: 'creativo' },
+          { id: '8c', text: 'Ayudar a otros', value: 'social' },
+          { id: '8d', text: 'Resolver desafíos prácticos', value: 'practico' }
+        ]
+      },
+      {
+        id: '9',
+        question: '¿Qué asignatura prefieres estudiar?',
+        options: [
+          { id: '9a', text: 'Ciencias naturales', value: 'ciencias' },
+          { id: '9b', text: 'Artes o música', value: 'artes' },
+          { id: '9c', text: 'Psicología o sociología', value: 'social' },
+          { id: '9d', text: 'Programación o ingeniería', value: 'tecnologia' }
+        ]
+      },
+      {
+        id: '10',
+        question: '¿Cómo te describes a ti mismo?',
+        options: [
+          { id: '10a', text: 'Analítico y lógico', value: 'ciencias' },
+          { id: '10b', text: 'Imaginativo y expresivo', value: 'artes' },
+          { id: '10c', text: 'Empático y comunicativo', value: 'social' },
+          { id: '10d', text: 'Innovador y práctico', value: 'tecnologia' }
+        ]
+      }
+    ];
+    this.loading = false;
+    this.resetTest();
+  }
+
+  private calculateResultsLocally(): void {
+    const areaCounts: { [key: string]: number } = {};
+
+    // Count frequency of each area
+    this.answers.forEach(answer => {
+      areaCounts[answer] = (areaCounts[answer] || 0) + 1;
+    });
+
+    // Sort areas by frequency (descending)
+    const sortedAreas = Object.entries(areaCounts)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 3); // Get top 3 areas
+
+    // Map area codes to readable names
+    const areaNames: { [key: string]: string } = {
+      'ciencias': 'Ciencias e Investigación',
+      'artes': 'Artes y Creatividad',
+      'social': 'Trabajo Social y Humanidades',
+      'tecnologia': 'Tecnología e Informática',
+      'administracion': 'Administración y Liderazgo',
+      'investigacion': 'Investigación Académica',
+      'creativo': 'Trabajo Creativo',
+      'practico': 'Trabajo Práctico y Técnico'
+    };
+
+    // Set top areas with readable names
+    this.topAreas = sortedAreas.map(([areaCode]) => areaNames[areaCode] || areaCode);
+
+    // Save attempt to localStorage for "Intentos Anteriores"
+    this.saveTestAttempt();
+
+    this.showResults = true;
+  }
+
+  private saveTestAttempt(): void {
+    const attempt = {
+      date: new Date(),
+      score: Math.floor(Math.random() * 40) + 60, // Random score between 60-100 for demo
+      topAreas: this.topAreas
+    };
+
+    const existingAttempts = localStorage.getItem('vocatio-test-attempts');
+    const attempts = existingAttempts ? JSON.parse(existingAttempts) : [];
+    attempts.push(attempt);
+    localStorage.setItem('vocatio-test-attempts', JSON.stringify(attempts));
+  }
+
+  goToHome(): void { this.router.navigate(['/home']); }
+  retakeTest(): void { this.ngOnInit(); }
+}
