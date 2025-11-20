@@ -6,74 +6,91 @@ export const authCardStyles = `
 
 .auth-card {
   width: min(420px, 100%);
-  background: #0f172a;
-  border-radius: 1.5rem;
-  padding: 2.25rem;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  box-shadow: 0 25px 45px rgba(2, 6, 23, 0.65);
+  background: var(--card-bg);
+  border-radius: 2rem;
+  padding: 2.5rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
 }
 
 .auth-card h2 {
   margin: 0;
   font-size: 1.75rem;
-  font-weight: 600;
-  color: #e2e8f0;
+  font-weight: 800;
+  color: var(--text-color);
+}
+
+.eyebrow {
+  font-weight: 700;
+  color: var(--analyst-purple);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
 }
 
 .subtitle {
-  margin-top: 0.35rem;
-  margin-bottom: 1.75rem;
-  color: #94a3b8;
+  margin-top: 0.5rem;
+  margin-bottom: 2rem;
+  color: #718096;
+  line-height: 1.5;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
-  font-size: 0.85rem;
-  color: #cbd5f5;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  font-weight: 600;
 }
 
 .field input,
 .field button,
 .field select {
-  background: #020617;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  color: #e2e8f0;
-  border-radius: 0.75rem;
+  background: #f7fafc;
+  border: 2px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: 1rem;
   padding: 0.9rem 1rem;
   font-size: 1rem;
+  font-family: var(--font-family-base);
+  transition: border-color 0.2s;
 }
 
 .field input:focus,
 .field select:focus,
 .field button:focus-visible {
-  border-color: transparent;
-  outline: 2px solid #6366f1;
+  border-color: var(--analyst-purple);
+  outline: none;
+  background: white;
 }
 
 .field input.invalid,
 .field select.invalid {
-  border-color: #fb7185;
+  border-color: #fc8181;
 }
 
 .field-error {
-  color: #fb7185;
-  font-size: 0.75rem;
+  color: #e53e3e;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
 }
 
 .primary-action {
   width: 100%;
   border: none;
-  padding: 0.95rem 1.1rem;
-  border-radius: 0.95rem;
-  font-size: 1rem;
-  font-weight: 600;
+  padding: 1rem;
+  border-radius: 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: #fff;
-  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  background: var(--analyst-purple);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: 1rem;
+  box-shadow: 0 4px 14px rgba(136,97,154,0.4);
 }
 
 .primary-action[disabled] {
@@ -118,52 +135,65 @@ export const authCardStyles = `
 }
 
 .primary-action:focus-visible {
-  outline: 3px solid rgba(99, 102, 241, 0.6);
+  outline: 3px solid rgba(136,97,154, 0.6);
   outline-offset: 2px;
 }
 
 .primary-action:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 18px 35px rgba(99, 102, 241, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(136,97,154,0.6);
+}
+
+.primary-action:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .secondary-action {
   width: 100%;
   background: transparent;
-  border: 1px solid rgba(148, 163, 184, 0.5);
+  border: 2px solid var(--border-color);
   margin-top: 0.5rem;
 }
 
 .note {
-  margin-top: 1rem;
-  font-size: 0.85rem;
-  color: #cbd5f5;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: #718096;
+  text-align: center;
 }
 
 .note a {
-  color: #a855f7;
+  color: var(--analyst-purple);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.note a:hover {
+  text-decoration: underline;
 }
 
 .feedback {
   margin-top: 1rem;
   min-height: 1.25rem;
   font-size: 0.9rem;
+  text-align: center;
+  font-weight: 600;
 }
 
 .feedback.success {
-  color: #4ade80;
+  color: var(--diplomat-green);
 }
 
 .feedback.error {
-  color: #fb7185;
+  color: #e53e3e;
 }
 
 .policy-list {
   margin-top: 1rem;
   font-size: 0.85rem;
-  color: #cbd5f5;
+  color: #718096;
   display: grid;
   gap: 0.25rem;
 }
@@ -171,5 +201,18 @@ export const authCardStyles = `
 .policy-list li {
   list-style: disc;
   margin-left: 1.25rem;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 0.4rem;
+  accent-color: var(--analyst-purple);
 }
 `;

@@ -18,22 +18,23 @@ import { UserProfile } from '../../core/validators/models/profile.models';
     <main class="home-shell">
       <div class="home-hero">
         <div class="hero-copy">
-          <p class="eyebrow">Panel principal</p>
-          <h1>Explora tus resultados vocacionales</h1>
+          <p class="eyebrow">Descubre tu camino</p>
+          <h1>Explora tus resultados <span style="color: var(--diplomat-green)">vocacionales</span></h1>
           <p>
             {{ profile?.email || 'Completa tu perfil' }} · {{ profile?.gradeLabel || 'Sin grado definido' }}
           </p>
           <div class="hero-actions">
-            <button class="primary-action" (click)="refreshRecommendations()">Actualizar recomendaciones</button>
-            <button class="secondary-action" (click)="takeVocationalTest()">Realizar test vocacional</button>
+            <button class="primary-action" (click)="takeVocationalTest()">Realizar test vocacional</button>
+            <button class="secondary-action" (click)="refreshRecommendations()">Actualizar recomendaciones</button>
             <button class="secondary-action" (click)="logout()">Cerrar sesión</button>
           </div>
-          <div class="status-card" *ngIf="profile">
-            <h3>Estado del perfil</h3>
-            <p>Edad estimada: {{ profile.age ?? '—' }}</p>
-            <p>Intereses capturados: {{ profile.interests.length }}</p>
-            <p>{{ recommendationMessage }}</p>
-          </div>
+        </div>
+
+        <div class="characters">
+            <div class="character-card analyst">INTJ</div>
+            <div class="character-card diplomat">ENFP</div>
+            <div class="character-card sentinel">ISTJ</div>
+            <div class="character-card explorer">ESTP</div>
         </div>
 
         <section class="profile-panel" *ngIf="profile">
@@ -127,12 +128,19 @@ import { UserProfile } from '../../core/validators/models/profile.models';
         </section>
       </div>
 
-      <section>
-        <header>
+      <div class="status-card" *ngIf="profile">
+        <h3>Estado del perfil</h3>
+        <p>Edad estimada: {{ profile.age ?? '—' }}</p>
+        <p>Intereses capturados: {{ profile.interests.length }}</p>
+        <p>{{ recommendationMessage }}</p>
+      </div>
+
+      <section style="margin-top: 4rem;">
+        <header style="text-align: center; margin-bottom: 2rem;">
           <h2>Recursos alineados a tu prueba vocacional</h2>
           <p class="subtitle">La plataforma cruza tus intereses con materiales validados por expertos.</p>
         </header>
-        <p class="feedback" *ngIf="statusMessage && !loadingResources">{{ statusMessage }}</p>
+        <p class="feedback" *ngIf="statusMessage && !loadingResources" style="text-align: center;">{{ statusMessage }}</p>
         <div class="resource-grid">
           <article class="resource-card" *ngFor="let resource of resources">
             <h4>{{ resource.title }}</h4>
@@ -140,7 +148,7 @@ import { UserProfile } from '../../core/validators/models/profile.models';
             <small *ngIf="resource.areaInteresId">Área ID: {{ resource.areaInteresId }}</small>
           </article>
         </div>
-        <p class="feedback" *ngIf="!resources.length && !loadingResources">Aún no hay recomendaciones disponibles.</p>
+        <p class="feedback" *ngIf="!resources.length && !loadingResources" style="text-align: center;">Aún no hay recomendaciones disponibles.</p>
       </section>
     </main>
   `,

@@ -2,9 +2,8 @@ export const authLayoutStyles = `
 :host {
   display: block;
   min-height: 100vh;
-  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.12), transparent 45%),
-    #050816;
-  color: #e2e8f0;
+  background: var(--bg-color);
+  color: var(--text-color);
 }
 
 .app-shell {
@@ -16,80 +15,127 @@ export const authLayoutStyles = `
 }
 
 .auth-shell {
-  width: min(1200px, 100%);
-  background: rgba(15, 23, 42, 0.9);
+  width: min(1100px, 100%);
+  background: white;
   border-radius: 2rem;
-  box-shadow: 0 25px 60px rgba(2, 6, 23, 0.8);
-  backdrop-filter: blur(18px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
   display: flex;
-  gap: 2rem;
   overflow: hidden;
+  min-height: 600px;
+  border: 1px solid var(--border-color);
 }
 
 .intro-panel {
-  flex: 1.1;
-  background: linear-gradient(160deg, rgba(236, 72, 153, 0.25), rgba(59, 130, 246, 0.2));
-  padding: 3rem;
+  flex: 1;
+  background: linear-gradient(135deg, var(--analyst-purple) 0%, var(--sentinel-blue) 100%);
+  padding: 4rem;
   display: flex;
   align-items: center;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative circles */
+.intro-panel::before,
+.intro-panel::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.intro-panel::before {
+  width: 300px;
+  height: 300px;
+  top: -50px;
+  left: -50px;
+}
+
+.intro-panel::after {
+  width: 200px;
+  height: 200px;
+  bottom: 50px;
+  right: -50px;
 }
 
 .intro-content {
-  max-width: 360px;
+  max-width: 400px;
+  position: relative;
+  z-index: 1;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .brand-mark {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.5rem;
-  background: #0f172a;
-  color: #fef3c7;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 1rem;
+  background: white;
+  color: var(--analyst-purple);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 1.25rem;
-  letter-spacing: 0.04em;
+  font-weight: 800;
+  font-size: 1.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .eyebrow {
   text-transform: uppercase;
-  letter-spacing: 0.3em;
-  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  font-size: 0.85rem;
   margin: 0;
-  color: #fbbf24;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 700;
 }
 
 .intro-content h1 {
-  font-size: clamp(2.25rem, 3vw, 2.75rem);
+  font-size: clamp(2.5rem, 4vw, 3rem);
   line-height: 1.1;
-  margin: 0;
+  margin: 0 0 1.5rem 0;
+  color: white;
 }
 
 .intro-copy {
-  margin-top: 1rem;
-  color: rgba(248, 250, 252, 0.9);
-  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
 }
 
 .intro-list {
-  margin: 1.25rem 0 0;
-  padding-left: 1.1rem;
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
   display: grid;
-  gap: 0.5rem;
-  color: rgba(248, 250, 252, 0.8);
-  font-size: 0.95rem;
+  gap: 1rem;
 }
 
 .intro-list li {
-  list-style: disc;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: white;
+  font-weight: 600;
+}
+
+.intro-list li::before {
+  content: '✓';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 800;
 }
 
 .auth-panel {
@@ -97,23 +143,24 @@ export const authLayoutStyles = `
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: 3rem;
+  background: white;
 }
 
 @media (max-width: 960px) {
   .auth-shell {
     flex-direction: column;
-    padding: 1rem;
+    height: auto;
+    min-height: auto;
   }
 
   .intro-panel {
-    order: 2;
-    border-radius: 1.5rem;
+    padding: 3rem 2rem;
+    order: -1;
   }
 
   .auth-panel {
-    order: 1;
-    padding: 1.5rem 1rem;
+    padding: 2rem;
   }
 }
 `;
