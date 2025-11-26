@@ -206,27 +206,53 @@ const FALLBACK_QUESTIONS: TestQuestion[] = [
             <li *ngFor="let area of topAreas">{{ area }}</li>
           </ul>
         </div>
+        <section class="insights-panel">
+          <h3>Perfil generado por DeepSeek</h3>
+          <p class="insights-loading" *ngIf="insightsLoading">Generando tu perfil con IA...</p>
+          <p class="field-error" *ngIf="insightsError && !insightsLoading">{{ insightsError }}</p>
+          <ng-container *ngIf="insights && !insightsLoading">
+            <div class="insights-grid">
+              <div class="mbti-highlight">
+                <div class="mbti-figure">
+                  <div class="mbti-head">
+                    <span class="mbti-eyes">• •</span>
+                    <span class="mbti-mouth"></span>
+                  </div>
+                  <div class="mbti-body"></div>
+                  <div class="mbti-badge">{{ insights.mbtiProfile || 'MBTI' }}</div>
+                </div>
+                <p class="mbti-caption">Tu arquetipo MBTI según tus respuestas</p>
+              </div>
+
+              <div class="insights-detail">
+                <div class="insights-block">
+                  <h4>Carreras recomendadas</h4>
+                  <ul>
+                    <li *ngFor="let career of insights.suggestedCareers">{{ career }}</li>
+                  </ul>
+                </div>
+
+                <div class="insights-block" *ngIf="insights.qualities?.length">
+                  <h4>Cualidades que destacan</h4>
+                  <div class="qualities">
+                    <span class="quality-chip" *ngFor="let quality of insights.qualities">{{ quality }}</span>
+                  </div>
+                </div>
+
+                <div class="insights-block">
+                  <h4>Resumen del perfil</h4>
+                  <p class="profile-summary">
+                    {{ insights.profileSummary }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </section>
         <div class="results-actions">
           <button class="primary-action" type="button" (click)="goToHome()">Ver recomendaciones</button>
           <button class="secondary-action" type="button" (click)="retakeTest()">Repetir test</button>
         </div>
-        <section class="insights-panel">
-          <h3>Análisis de DeepSeek</h3>
-          <p class="insights-loading" *ngIf="insightsLoading">Generando tu perfil con IA...</p>
-          <p class="field-error" *ngIf="insightsError && !insightsLoading">{{ insightsError }}</p>
-          <ng-container *ngIf="insights && !insightsLoading">
-            <p><strong>Personalidad MBTI: </strong>{{ insights.mbtiProfile || 'Sin datos' }}</p>
-            <div class="insights-careers">
-              <strong>Carreras sugeridas</strong>
-              <ul>
-                <li *ngFor="let career of insights.suggestedCareers">{{ career }}</li>
-              </ul>
-            </div>
-            <p class="profile-summary">
-              {{ insights.profileSummary }}
-            </p>
-          </ng-container>
-        </section>
       </section>
 
       <p class="empty" *ngIf="!loading && !showResults && !questions.length">

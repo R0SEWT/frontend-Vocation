@@ -46,5 +46,6 @@ export interface VocationalInsightsPayload {
 export interface VocationalInsights {
   mbtiProfile: string;
   suggestedCareers: string[];
+  qualities?: string[];
   profileSummary: string;
 }
