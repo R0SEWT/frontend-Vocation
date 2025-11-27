@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -8,6 +8,7 @@ import { RegisterPayload } from '../../../core/validators/models/auth.models';
 import { authCardStyles } from '../../../shared/components/auth-card.styles';
 import { confirmPasswordValidator } from '../validators/confirm-password.validator';
 import { getPasswordPolicyErrors } from '../../../core/validators/password-policy.validator';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-register-page',
@@ -121,6 +122,7 @@ export class RegisterPageComponent {
   private readonly authService = inject(AuthService);
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   registration = this.fb.group(
     {
@@ -157,20 +159,25 @@ export class RegisterPageComponent {
     this.loading = true;
     this.feedback = '';
 
-    this.authService.register(payload).subscribe({
-      next: (response) => {
-        this.success = true;
-        this.feedback = response.message;
-        this.session.saveTokens(response.tokens);
-        this.router.navigate(['/home']);
-      },
-      error: (error: Error) => {
-        this.success = false;
-        this.feedback = error.message;
-      },
-      complete: () => {
-        this.loading = false;
-      }
-    });
+    this.authService
+      .register(payload)
+      .pipe(
+        finalize(() => {
+          this.loading = false;
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          this.success = true;
+          this.feedback = response.message;
+          this.session.saveTokens(response.tokens);
+          this.router.navigate(['/home']);
+        },
+        error: (error: Error) => {
+          this.success = false;
+          this.feedback = error.message;
+        }
+      });
   }
 }
