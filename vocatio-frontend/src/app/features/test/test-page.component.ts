@@ -207,11 +207,11 @@ const FALLBACK_QUESTIONS: TestQuestion[] = [
             <div class="insights-grid">
               <div class="mbti-highlight">
                 <div class="mbti-figure">
-                  <div class="mbti-head">
-                    <span class="mbti-eyes">• •</span>
-                    <span class="mbti-mouth"></span>
-                  </div>
-                  <div class="mbti-body"></div>
+                  <img
+                    class="mbti-avatar"
+                    [src]="getMbtiAvatar(insights.mbtiProfile)"
+                    [alt]="'Monigote ' + (insights.mbtiProfile || 'MBTI')"
+                  />
                   <div class="mbti-badge">{{ insights.mbtiProfile || 'MBTI' }}</div>
                 </div>
                 <p class="mbti-caption">Tu arquetipo MBTI según tus respuestas</p>
@@ -272,6 +272,25 @@ export class TestPageComponent implements OnInit {
   insights?: VocationalInsights;
   insightsLoading = false;
   insightsError = '';
+  private readonly mbtiAvatarMap: Record<string, string> = {
+    intj: 'mbti-avatars/intj.svg',
+    intp: 'mbti-avatars/intp.svg',
+    entj: 'mbti-avatars/entj.svg',
+    entp: 'mbti-avatars/entp.svg',
+    infj: 'mbti-avatars/infj.svg',
+    infp: 'mbti-avatars/infp.svg',
+    enfj: 'mbti-avatars/enfj.svg',
+    enfp: 'mbti-avatars/enfp.svg',
+    istj: 'mbti-avatars/istj.svg',
+    isfj: 'mbti-avatars/isfj.svg',
+    estj: 'mbti-avatars/estj.svg',
+    esfj: 'mbti-avatars/esfj.svg',
+    istp: 'mbti-avatars/istp.svg',
+    isfp: 'mbti-avatars/isfp.svg',
+    estp: 'mbti-avatars/estp.svg',
+    esfp: 'mbti-avatars/esfp.svg',
+    default: 'mbti-avatars/default.svg'
+  };
 
   constructor(
     private testService: TestService,
@@ -294,6 +313,15 @@ export class TestPageComponent implements OnInit {
       return 0;
     }
     return ((this.currentQuestionIndex + 1) / this.questions.length) * 100;
+  }
+
+  getMbtiAvatar(profile?: string): string {
+    if (!profile) {
+      return this.mbtiAvatarMap['default'];
+    }
+
+    const key = profile.toLowerCase();
+    return this.mbtiAvatarMap[key] ?? this.mbtiAvatarMap['default'];
   }
 
   prepareTest(): void {

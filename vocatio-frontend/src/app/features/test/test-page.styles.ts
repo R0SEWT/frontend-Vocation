@@ -356,48 +356,18 @@ export const testPageStyles = `
 
 .mbti-figure {
   position: relative;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.mbti-head {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: white;
-  color: #2d3748;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  gap: 0.75rem;
 }
 
-.mbti-eyes {
-  font-size: 1.75rem;
-  letter-spacing: 0.3rem;
-  line-height: 1;
-  transform: translateX(0.15rem);
-}
-
-.mbti-mouth {
-  width: 32px;
-  height: 10px;
-  background: #2d3748;
-  border-radius: 999px;
-  margin-top: 0.3rem;
-  display: inline-block;
-}
-
-.mbti-body {
-  width: 140px;
-  height: 80px;
-  border-radius: 80px 80px 28px 28px;
-  background: rgba(255,255,255,0.92);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-  margin-top: -12px;
+.mbti-avatar {
+  width: min(260px, 100%);
+  height: auto;
+  border-radius: 1.25rem;
+  box-shadow: 0 16px 34px rgba(0,0,0,0.18);
+  border: 2px solid rgba(255,255,255,0.4);
 }
 
 .mbti-badge {
