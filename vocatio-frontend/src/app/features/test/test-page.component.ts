@@ -1,14 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   TestOption,
   TestQuestion,
   TestResult,
-  TestSubmission,
   VocationalInsights
 } from '../../core/validators/models/learning.models';
+import { finalize } from 'rxjs';
 import { SessionService } from '../../core/services/session.service';
 import { TestService } from '../../core/services/test.service';
 import { testPageStyles } from './test-page.styles';
@@ -199,16 +199,9 @@ const FALLBACK_QUESTIONS: TestQuestion[] = [
 
       <section class="results-card" *ngIf="!loading && showResults">
         <h2>¡Test completado!</h2>
-        <p>Estas son tus áreas principales según tus respuestas:</p>
-        <div class="results-summary">
-          <h3>Áreas recomendadas:</h3>
-          <ul>
-            <li *ngFor="let area of topAreas">{{ area }}</li>
-          </ul>
-        </div>
         <section class="insights-panel">
-          <h3>Perfil generado por DeepSeek</h3>
-          <p class="insights-loading" *ngIf="insightsLoading">Generando tu perfil con IA...</p>
+          <h3>Perfil powerd by AI</h3>
+          <p class="insights-loading" *ngIf="insightsLoading">La IA esta evaluando tu perfil...</p>
           <p class="field-error" *ngIf="insightsError && !insightsLoading">{{ insightsError }}</p>
           <ng-container *ngIf="insights && !insightsLoading">
             <div class="insights-grid">
@@ -284,7 +277,8 @@ export class TestPageComponent implements OnInit {
     private testService: TestService,
     private session: SessionService,
     private router: Router,
-    private insightsService: InsightsService
+    private insightsService: InsightsService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -326,32 +320,71 @@ export class TestPageComponent implements OnInit {
       return;
     }
 
-    this.testService.createAssessment(token).subscribe({
-      next: ({ assessmentId }) => this.loadQuestions(token, assessmentId),
-      error: (error: Error) => {
-        this.statusMessage = `${error.message}. Se usarán preguntas locales.`;
-        this.loadFallbackQuestions();
-      }
-    });
+    this.testService
+      .createAssessment(token)
+      .pipe(
+        finalize(() => {
+          // evitar que el spinner se quede prendido si hubo cortes o no se limpió
+          if (this.loading) {
+            this.loading = false;
+            this.cdr.detectChanges();
+          }
+        })
+      )
+      .subscribe(
+        ({ assessmentId }) => this.loadQuestions(token, assessmentId),
+        (error: any) => {
+          if (error?.status === 409) {
+            this.statusMessage = 'Ya tienes un intento en progreso. Recuperándolo...';
+            this.recoverInProgressAssessment(token);
+            return;
+          }
+          this.statusMessage = `${error?.message || 'No se pudo crear el assessment.'}. Se usarán preguntas locales.`;
+          console.error('Error creando assessment remoto', error);
+          this.loadFallbackQuestions();
+        }
+      );
   }
 
   private loadQuestions(token: string, assessmentId: string): void {
+    if (!assessmentId) {
+      this.statusMessage = 'No se pudo identificar el assessment remoto.';
+      this.loadFallbackQuestions();
+      return;
+    }
     this.assessmentId = assessmentId;
-    this.testService.fetchQuestions(assessmentId, token).subscribe({
-      next: (questions) => {
-        if (!questions.length) {
-          this.statusMessage = 'No se encontraron preguntas oficiales.';
+    this.statusMessage = 'Cargando preguntas...';
+    this.loading = true;
+    this.testService
+      .fetchQuestions(assessmentId, token)
+      .pipe(
+        finalize(() => {
+          if (this.loading) {
+            this.loading = false;
+            this.cdr.detectChanges();
+          }
+        })
+      )
+      .subscribe(
+        ({ questions, answers }) => {
+          if (!questions.length) {
+            this.statusMessage = 'No se encontraron preguntas oficiales.';
+            this.loadFallbackQuestions();
+            return;
+          }
+          console.info('Preguntas cargadas', questions.length);
+          this.questions = questions;
+          this.restoreAnswers(answers);
+          this.loading = false;
+          this.statusMessage = '';
+          this.cdr.detectChanges();
+        },
+        (error: any) => {
+          this.statusMessage = `${error?.message || 'No se pudieron cargar las preguntas.'}. Se usarán preguntas locales.`;
+          console.error('Error obteniendo preguntas del assessment remoto', error);
           this.loadFallbackQuestions();
-          return;
         }
-        this.questions = questions;
-        this.loading = false;
-      },
-      error: (error: Error) => {
-        this.statusMessage = `${error.message}. Se usarán preguntas locales.`;
-        this.loadFallbackQuestions();
-      }
-    });
+      );
   }
 
   private loadFallbackQuestions(): void {
@@ -374,6 +407,63 @@ export class TestPageComponent implements OnInit {
     this.insights = undefined;
     this.insightsError = '';
     this.insightsLoading = false;
+  }
+
+  private restoreAnswers(answers: Array<{ questionId: string; optionId: string }>): void {
+    if (!answers?.length) {
+      return;
+    }
+    answers.forEach(({ questionId, optionId }) => {
+      this.answersByQuestion[questionId] = optionId;
+      const optionValue =
+        this.questions
+          .find((q) => q.id === questionId)
+          ?.options.find((opt) => opt.id === optionId)?.value ?? optionId;
+      this.answerValues[questionId] = optionValue;
+    });
+    const firstUnansweredIndex = this.questions.findIndex((q) => !this.answersByQuestion[q.id]);
+    this.currentQuestionIndex = firstUnansweredIndex === -1 ? this.questions.length - 1 : firstUnansweredIndex;
+  }
+
+  private recoverInProgressAssessment(token: string): void {
+    this.testService.listAssessments(token).subscribe({
+      next: (assessments) => {
+        const inProgress = assessments.find((a) => a.status === 'IN_PROGRESS') || assessments[0];
+        if (!inProgress) {
+          this.statusMessage = 'No se encontró un assessment pendiente. Usando preguntas locales.';
+          this.loadFallbackQuestions();
+          return;
+        }
+
+        if (inProgress.pages?.length) {
+          // Tenemos las páginas y respuestas en la misma respuesta; evitamos otro GET
+          const mappedQuestions = inProgress.pages.flatMap((page) =>
+            page.questions.map((question) => ({
+              id: question.id,
+              question: question.title,
+              options: question.options.map((option) => ({
+                id: option.id,
+                text: option.label,
+                value: option.label
+              }))
+            }))
+          );
+          this.assessmentId = inProgress.id;
+          this.questions = mappedQuestions;
+          this.restoreAnswers(inProgress.answers || []);
+          this.loading = false;
+          return;
+        }
+
+        // Si no vienen páginas en el listado, hacemos GET al assessment puntual
+        this.loadQuestions(token, inProgress.id);
+      },
+      error: (error: any) => {
+        this.statusMessage = `${error?.message || 'No se pudo recuperar el assessment pendiente.'}. Se usarán preguntas locales.`;
+        console.error('Error listando assessments', error);
+        this.loadFallbackQuestions();
+      }
+    });
   }
 
   selectOption(option: TestOption): void {
@@ -413,30 +503,11 @@ export class TestPageComponent implements OnInit {
       return;
     }
 
-    if (!this.assessmentId) {
-      this.statusMessage = 'No se pudo identificar el intento actual.';
-      return;
-    }
-
-    const submission: TestSubmission = {
-      answers: this.questions.map((question) => this.answersByQuestion[question.id])
-    };
-
-    this.statusMessage = 'Enviando tus respuestas...';
-
-    this.testService.submitTest(this.assessmentId, token, submission).subscribe({
-      next: (result) => {
-        this.submissionResult = result;
-        this.topAreas = result.topAreas;
-        this.showResults = true;
-        this.statusMessage = 'Resultados listos.';
-        this.requestInsights();
-      },
-      error: (error: Error) => {
-        this.statusMessage = `${error.message}. Se mostrarán resultados locales.`;
-        this.calculateResultsLocally();
-      }
-    });
+    this.statusMessage = 'Procesando tus respuestas con IA...';
+    this.resetInsights();
+    this.topAreas = [];
+    this.showResults = false;
+    this.requestInsights();
   }
 
   private calculateResultsLocally(): void {
@@ -508,6 +579,7 @@ export class TestPageComponent implements OnInit {
       .filter((item): item is { questionId: string; optionId: string; value: string } => Boolean(item));
 
     if (!answersPayload.length) {
+      this.statusMessage = 'Debes responder todas las preguntas antes de continuar.';
       return;
     }
 
@@ -516,6 +588,7 @@ export class TestPageComponent implements OnInit {
 
     this.insightsLoading = true;
     this.insightsError = '';
+    this.showResults = true;
 
     this.insightsService
       .generateVocationalInsights({
@@ -526,11 +599,39 @@ export class TestPageComponent implements OnInit {
         next: (response) => {
           this.insights = response;
           this.insightsLoading = false;
+          this.assessmentId = response.assessmentId ?? this.assessmentId;
+          this.statusMessage = '';
+          this.fetchAssessmentResultFromServer();
+          this.cdr.detectChanges();
         },
         error: (error: Error) => {
           this.insightsError = error.message;
           this.insightsLoading = false;
+          this.statusMessage = 'No se pudieron generar insights con IA.';
+          console.error('Error generando insights con DeepSeek', error);
+          this.cdr.detectChanges();
         }
       });
+  }
+
+  private fetchAssessmentResultFromServer(): void {
+    if (!this.assessmentId) {
+      return;
+    }
+    const token = this.session.getAccessToken();
+    if (!token) {
+      return;
+    }
+
+    this.testService.fetchResult(this.assessmentId, token).subscribe({
+      next: (result) => {
+        this.submissionResult = result;
+        this.topAreas = result.topAreas || [];
+        this.cdr.detectChanges();
+      },
+      error: (error: Error) => {
+        console.error('Error obteniendo resultados del assessment', error);
+      }
+    });
   }
 }

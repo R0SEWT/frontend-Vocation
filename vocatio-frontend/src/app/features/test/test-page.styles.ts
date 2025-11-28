@@ -143,7 +143,7 @@ export const testPageStyles = `
 
 .options-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -159,6 +159,7 @@ export const testPageStyles = `
   font-weight: 600;
   text-align: left;
   font-family: var(--font-family-base);
+  min-height: 100%;
 }
 
 .option-button:hover {
@@ -489,6 +490,9 @@ export const testPageStyles = `
   .question-card h2 {
     font-size: 1.25rem;
   }
+  .options-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .insights-grid {
     grid-template-columns: 1fr;
   }
@@ -498,6 +502,18 @@ export const testPageStyles = `
   }
   .primary-action, .secondary-action {
     width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .options-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .options-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 }
 `;

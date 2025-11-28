@@ -8,7 +8,12 @@ export class ApiErrorInterceptor implements HttpInterceptor {
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
         const message = error.error?.message || error.statusText || 'Ocurrió un error inesperado';
-        return throwError(() => new Error(message));
+        const friendlyError: any = new Error(message);
+        friendlyError.status = error.status;
+        friendlyError.statusText = error.statusText;
+        friendlyError.url = error.url;
+        friendlyError.error = error.error;
+        return throwError(() => friendlyError);
       })
     );
   }
