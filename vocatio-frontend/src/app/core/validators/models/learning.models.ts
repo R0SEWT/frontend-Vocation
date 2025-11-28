@@ -23,15 +23,23 @@ export interface TestOption {
   value: string;
 }
 
+export interface AssessmentAnswer {
+  questionId: string;
+  optionId: string;
+}
+
 export interface TestSubmission {
-  answers: string[];
+  answers: AssessmentAnswer[];
 }
 
 export interface TestResult {
-  id: string;
-  userId: string;
+  id?: string;
+  assessmentId?: string;
+  userId?: string;
   topAreas: string[];
-  completedAt: string;
+  suggestedCareers?: string[];
+  chart?: unknown;
+  completedAt?: string;
 }
 
 export interface VocationalInsightsPayload {
@@ -44,7 +52,9 @@ export interface VocationalInsightsPayload {
 }
 
 export interface VocationalInsights {
+  assessmentId?: string;
   mbtiProfile: string;
   suggestedCareers: string[];
+  qualities?: string[];
   profileSummary: string;
 }
