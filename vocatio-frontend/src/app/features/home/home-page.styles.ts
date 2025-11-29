@@ -2,7 +2,7 @@ export const homePageStyles = `
   :host {
     display: block;
     min-height: 100vh;
-    background-color: #f8fafc; /* Color de fondo más suave y moderno */
+    background-color: #f8fafc;
     color: var(--text-color);
   }
 
@@ -12,7 +12,7 @@ export const homePageStyles = `
     padding: 2rem;
     display: flex;
     flex-direction: column;
-    gap: 4rem; /* Espaciado vertical consistente entre secciones */
+    gap: 4rem;
   }
 
   /* --- HERO SECTION --- */
@@ -31,7 +31,7 @@ export const homePageStyles = `
 
   @media (min-width: 768px) {
     .hero-section {
-      grid-template-columns: 1.2fr 0.8fr; /* Texto a la izq, visual a la der */
+      grid-template-columns: 1.2fr 0.8fr;
       text-align: left;
       padding: 4rem;
     }
@@ -86,7 +86,6 @@ export const homePageStyles = `
   }
   .character-card:hover { transform: translateY(-5px); }
 
-  /* Estilos específicos de las cartas */
   .analyst { background: var(--analyst-purple); transform: rotate(-3deg); }
   .diplomat { background: var(--diplomat-green); transform: rotate(2deg); margin-top: 1.5rem;}
   .sentinel { background: var(--sentinel-blue); transform: rotate(3deg); }
@@ -102,7 +101,7 @@ export const homePageStyles = `
 
   @media (min-width: 850px) {
     .dashboard-grid {
-      grid-template-columns: 2fr 1fr; /* Perfil grande, Estado pequeño */
+      grid-template-columns: 2fr 1fr;
       align-items: start;
     }
   }
@@ -369,5 +368,12 @@ export const homePageStyles = `
     padding: 2rem;
     background: #f1f5f9;
     border-radius: 1rem;
+  }
+  
+  .loading-state, .loading-spinner {
+    text-align: center;
+    color: var(--analyst-purple);
+    font-weight: 600;
+    margin: 2rem 0;
   }
 `;

@@ -5,6 +5,7 @@ import { LearningResource } from '../../core/validators/models/learning.models';
 import { ProfileService } from '../../core/services/profile.service';
 import { RecommendationService } from '../../core/services/recommendation.service';
 import { SessionService } from '../../core/services/session.service';
+import { TestService } from '../../core/services/test.service'; // Importamos TestService
 import { extractAreaIds } from '../../core/constants/interest-area.constants';
 import { homePageStyles } from './home-page.styles';
 import { UserProfile } from '../../core/validators/models/profile.models';
@@ -24,7 +25,14 @@ import { UserProfile } from '../../core/validators/models/profile.models';
           </p>
           <div class="hero-actions">
             <button class="primary-action" (click)="takeVocationalTest()">Realizar test vocacional</button>
-            <button class="secondary-action" (click)="refreshRecommendations()">Actualizar recomendaciones</button>
+            
+            @if (lastAssessmentId) {
+              <button class="secondary-action" (click)="viewLastResult()">Ver último resultado</button>
+            } @else {
+              <button class="secondary-action" (click)="refreshRecommendations()">Actualizar recomendaciones</button>
+            }
+            
+            <button class="secondary-action" (click)="logout()">Cerrar sesión</button>
           </div>
         </div>
 
@@ -166,16 +174,20 @@ export class HomePageComponent implements OnInit {
   statusMessage = '';
   recommendationMessage = 'Actualiza tus intereses para afinar el mapa vocacional.';
   loadingResources = false;
+  
   profileConfigForm: FormGroup;
   editingProfile = false;
   profileFeedback = '';
   savingProfile = false;
   deletingAccount = false;
+  
+  lastAssessmentId?: string; // Nueva propiedad para guardar el ID del último test
 
   constructor(
     private profileService: ProfileService,
     private recommendationService: RecommendationService,
     private session: SessionService,
+    private testService: TestService, // Inyectamos el servicio de test
     private router: Router,
     private fb: FormBuilder
   ) {
@@ -188,7 +200,33 @@ export class HomePageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProfile();
+    this.checkAssessments(); // Buscamos si hay tests previos al cargar
   }
+
+  // --- NUEVA LÓGICA DE RESULTADOS ---
+  private checkAssessments(): void {
+    const token = this.session.getAccessToken();
+    if (!token) return;
+
+    this.testService.listAssessments(token).subscribe({
+      next: (assessments) => {
+        // Filtramos los completados
+        const completed = assessments.filter(a => a.status === 'COMPLETED');
+        if (completed.length > 0) {
+          // Tomamos el último (asumiendo que el backend los devuelve en orden cronológico o por ID)
+          this.lastAssessmentId = completed[completed.length - 1].id;
+        }
+      },
+      error: (err) => console.error('Error verificando historial de tests', err)
+    });
+  }
+
+  viewLastResult(): void {
+    if (this.lastAssessmentId) {
+      this.router.navigate(['/test/results', this.lastAssessmentId]);
+    }
+  }
+  // ----------------------------------
 
   private loadProfile(): void {
     this.profileService.fetchProfile().subscribe({
