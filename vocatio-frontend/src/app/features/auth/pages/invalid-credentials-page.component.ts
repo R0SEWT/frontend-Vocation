@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { authCardStyles } from '../../../shared/components/auth-card.styles';
@@ -6,7 +6,7 @@ import { authCardStyles } from '../../../shared/components/auth-card.styles';
 @Component({
   selector: 'app-invalid-credentials-page',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   template: `
     <section class="auth-card">
       <p class="eyebrow">Acceso denegado</p>

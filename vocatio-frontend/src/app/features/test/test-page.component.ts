@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -121,7 +121,7 @@ const FALLBACK_QUESTIONS: TestQuestion[] = [
 @Component({
   selector: 'app-test-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   template: `
     <main class="test-shell">
       <section class="test-hero">
@@ -132,127 +132,151 @@ const FALLBACK_QUESTIONS: TestQuestion[] = [
           áreas donde puedes tener mayor impacto.
         </p>
       </section>
-
-      <p class="status" *ngIf="statusMessage">{{ statusMessage }}</p>
-
-      <div class="test-progress" *ngIf="!loading && !showResults && questions.length">
-        <div class="progress-bar">
-          <div class="progress-fill" [style.width.%]="progressPercentage"></div>
-        </div>
-        <span class="progress-text">{{ currentQuestionIndex + 1 }} / {{ questions.length }}</span>
-      </div>
-
-      <div class="loading-section" *ngIf="loading">
-        <div class="loading-card">
-          <p>Cargando preguntas...</p>
-        </div>
-      </div>
-
-      <section class="question-section" *ngIf="!loading && !showResults && currentQuestion">
-        <div class="question-card">
-          <div class="question-header">
-            <span class="question-icon">💭</span>
-            <h2>{{ currentQuestion.question }}</h2>
+    
+      @if (statusMessage) {
+        <p class="status">{{ statusMessage }}</p>
+      }
+    
+      @if (!loading && !showResults && questions.length) {
+        <div class="test-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="progressPercentage"></div>
           </div>
-          <div class="options-grid">
-            <button
-              class="option-button"
-              type="button"
-              *ngFor="let option of currentQuestion.options"
-              [class.selected]="answersByQuestion[currentQuestion.id] === option.id"
-              (click)="selectOption(option)"
-            >
-              {{ option.text }}
-            </button>
+          <span class="progress-text">{{ currentQuestionIndex + 1 }} / {{ questions.length }}</span>
+        </div>
+      }
+    
+      @if (loading) {
+        <div class="loading-section">
+          <div class="loading-card">
+            <p>Cargando preguntas...</p>
           </div>
-          <div class="insight-notes">
-            <label>
-              <span>¿Quieres contarnos algo más sobre tus intereses?</span>
-              <textarea
-                rows="4"
-                maxlength="400"
-                [formControl]="opinionControl"
-                placeholder="Comparte detalles adicionales que quieras que la IA considere."
-              ></textarea>
-            </label>
-            <div class="insight-note-meta">
-              <small class="field-hint">{{ opinionControl.value?.length || 0 }}/400 caracteres</small>
-              <small class="field-error" *ngIf="opinionControl.hasError('maxlength')">Máximo 400 caracteres.</small>
+        </div>
+      }
+    
+      @if (!loading && !showResults && currentQuestion) {
+        <section class="question-section">
+          <div class="question-card">
+            <div class="question-header">
+              <span class="question-icon">💭</span>
+              <h2>{{ currentQuestion.question }}</h2>
+            </div>
+            <div class="options-grid">
+              @for (option of currentQuestion.options; track option) {
+                <button
+                  class="option-button"
+                  type="button"
+                  [class.selected]="answersByQuestion[currentQuestion.id] === option.id"
+                  (click)="selectOption(option)"
+                  >
+                  {{ option.text }}
+                </button>
+              }
+            </div>
+            <div class="insight-notes">
+              <label>
+                <span>¿Quieres contarnos algo más sobre tus intereses?</span>
+                <textarea
+                  rows="4"
+                  maxlength="400"
+                  [formControl]="opinionControl"
+                  placeholder="Comparte detalles adicionales que quieras que la IA considere."
+                ></textarea>
+              </label>
+              <div class="insight-note-meta">
+                <small class="field-hint">{{ opinionControl.value?.length || 0 }}/400 caracteres</small>
+                @if (opinionControl.hasError('maxlength')) {
+                  <small class="field-error">Máximo 400 caracteres.</small>
+                }
+              </div>
             </div>
           </div>
+        </section>
+      }
+    
+      @if (!loading && !showResults && currentQuestion) {
+        <div class="actions-section">
+          <div class="navigation-actions">
+            <button
+              class="secondary-action"
+              type="button"
+              (click)="goBack()"
+              [disabled]="currentQuestionIndex === 0"
+              >
+              Anterior
+            </button>
+            <button class="primary-action" type="button" (click)="goToHome()">Ir al inicio</button>
+          </div>
         </div>
-      </section>
-
-      <div class="actions-section" *ngIf="!loading && !showResults && currentQuestion">
-        <div class="navigation-actions">
-          <button
-            class="secondary-action"
-            type="button"
-            (click)="goBack()"
-            [disabled]="currentQuestionIndex === 0"
-          >
-            Anterior
-          </button>
-          <button class="primary-action" type="button" (click)="goToHome()">Ir al inicio</button>
-        </div>
-      </div>
-
-      <section class="results-card" *ngIf="!loading && showResults">
-        <h2>¡Test completado!</h2>
-        <section class="insights-panel">
-          <h3>Perfil powerd by AI</h3>
-          <p class="insights-loading" *ngIf="insightsLoading">La IA esta evaluando tu perfil...</p>
-          <p class="field-error" *ngIf="insightsError && !insightsLoading">{{ insightsError }}</p>
-          <ng-container *ngIf="insights && !insightsLoading">
-            <div class="insights-grid">
-              <div class="mbti-highlight">
-                <div class="mbti-figure">
-                  <img
-                    class="mbti-avatar"
-                    [src]="getMbtiAvatar(insights.mbtiProfile)"
-                    [alt]="'Monigote ' + (insights.mbtiProfile || 'MBTI')"
-                  />
-                  <div class="mbti-badge">{{ insights.mbtiProfile || 'MBTI' }}</div>
-                </div>
-                <p class="mbti-caption">Tu arquetipo MBTI según tus respuestas</p>
-              </div>
-
-              <div class="insights-detail">
-                <div class="insights-block">
-                  <h4>Carreras recomendadas</h4>
-                  <ul>
-                    <li *ngFor="let career of insights.suggestedCareers">{{ career }}</li>
-                  </ul>
-                </div>
-
-                <div class="insights-block" *ngIf="insights.qualities?.length">
-                  <h4>Cualidades que destacan</h4>
-                  <div class="qualities">
-                    <span class="quality-chip" *ngFor="let quality of insights.qualities">{{ quality }}</span>
+      }
+    
+      @if (!loading && showResults) {
+        <section class="results-card">
+          <h2>¡Test completado!</h2>
+          <section class="insights-panel">
+            <h3>Perfil powerd by AI</h3>
+            @if (insightsLoading) {
+              <p class="insights-loading">La IA esta evaluando tu perfil...</p>
+            }
+            @if (insightsError && !insightsLoading) {
+              <p class="field-error">{{ insightsError }}</p>
+            }
+            @if (insights && !insightsLoading) {
+              <div class="insights-grid">
+                <div class="mbti-highlight">
+                  <div class="mbti-figure">
+                    <img
+                      class="mbti-avatar"
+                      [src]="getMbtiAvatar(insights.mbtiProfile)"
+                      [alt]="'Monigote ' + (insights.mbtiProfile || 'MBTI')"
+                      />
+                      <div class="mbti-badge">{{ insights.mbtiProfile || 'MBTI' }}</div>
+                    </div>
+                    <p class="mbti-caption">Tu arquetipo MBTI según tus respuestas</p>
+                  </div>
+                  <div class="insights-detail">
+                    <div class="insights-block">
+                      <h4>Carreras recomendadas</h4>
+                      <ul>
+                        @for (career of insights.suggestedCareers; track career) {
+                          <li>{{ career }}</li>
+                        }
+                      </ul>
+                    </div>
+                    @if (insights.qualities?.length) {
+                      <div class="insights-block">
+                        <h4>Cualidades que destacan</h4>
+                        <div class="qualities">
+                          @for (quality of insights.qualities; track quality) {
+                            <span class="quality-chip">{{ quality }}</span>
+                          }
+                        </div>
+                      </div>
+                    }
+                    <div class="insights-block">
+                      <h4>Resumen del perfil</h4>
+                      <p class="profile-summary">
+                        {{ insights.profileSummary }}
+                      </p>
+                    </div>
                   </div>
                 </div>
-
-                <div class="insights-block">
-                  <h4>Resumen del perfil</h4>
-                  <p class="profile-summary">
-                    {{ insights.profileSummary }}
-                  </p>
-                </div>
-              </div>
+              }
+            </section>
+            <div class="results-actions">
+              <button class="primary-action" type="button" (click)="goToHome()">Ver recomendaciones</button>
+              <button class="secondary-action" type="button" (click)="retakeTest()">Repetir test</button>
             </div>
-          </ng-container>
-        </section>
-        <div class="results-actions">
-          <button class="primary-action" type="button" (click)="goToHome()">Ver recomendaciones</button>
-          <button class="secondary-action" type="button" (click)="retakeTest()">Repetir test</button>
-        </div>
-      </section>
-
-      <p class="empty" *ngIf="!loading && !showResults && !questions.length">
-        No hay preguntas disponibles en este momento.
-      </p>
-    </main>
-  `,
+          </section>
+        }
+    
+        @if (!loading && !showResults && !questions.length) {
+          <p class="empty">
+            No hay preguntas disponibles en este momento.
+          </p>
+        }
+      </main>
+    `,
   styles: [testPageStyles]
 })
 export class TestPageComponent implements OnInit {

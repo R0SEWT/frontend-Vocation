@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LearningResource } from '../../core/validators/models/learning.models';
@@ -13,7 +13,7 @@ import { UserProfile } from '../../core/validators/models/profile.models';
 @Component({
   selector: 'app-home-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   template: `
     <main class="home-shell">
       <div class="home-hero">
@@ -29,129 +29,149 @@ import { UserProfile } from '../../core/validators/models/profile.models';
             <button class="secondary-action" (click)="logout()">Cerrar sesión</button>
           </div>
         </div>
-
+    
         <div class="characters">
-            <div class="character-card analyst">INTJ</div>
-            <div class="character-card diplomat">ENFP</div>
-            <div class="character-card sentinel">ISTJ</div>
-            <div class="character-card explorer">ESTP</div>
+          <div class="character-card analyst">INTJ</div>
+          <div class="character-card diplomat">ENFP</div>
+          <div class="character-card sentinel">ISTJ</div>
+          <div class="character-card explorer">ESTP</div>
         </div>
-
-        <section class="profile-panel" *ngIf="profile">
-          <header class="profile-header">
-            <p class="eyebrow">Perfil disponible</p>
-            <h3>{{ profile.name || 'Nombre no definido' }}</h3>
-            <p class="profile-email">{{ profile.email }}</p>
-          </header>
-          <div class="profile-meta">
-            <p><strong>Edad estimada:</strong> {{ profile.age ?? 'Pendiente' }}</p>
-            <p><strong>Grado actual:</strong> {{ profile.gradeLabel || 'Sin grado definido' }}</p>
-            <p><strong>Intereses:</strong> {{ profile.interests.length ? profile.interests.join(', ') : 'Sin intereses registrados' }}</p>
-            <p *ngIf="profile.preferences">
-              <strong>Preferencias:</strong>
-              <span>Newsletter {{ profile.preferences['newsletter'] ? 'activada' : 'desactivada' }}</span>
-              ·
-              <span>Compartir perfil {{ profile.preferences['shareProfile'] ? 'sí' : 'no' }}</span>
-            </p>
-          </div>
-          <div class="profile-actions">
-            <button class="primary-action" type="button" (click)="openProfileConfig()">Configurar perfil</button>
-            <button
-              type="button"
-              class="secondary-action danger-action"
-              (click)="deleteAccount()"
-              [disabled]="deletingAccount"
-            >
-              {{ deletingAccount ? 'Eliminando...' : 'Eliminar cuenta' }}
-            </button>
-          </div>
-          <p class="profile-feedback" *ngIf="profileFeedback">{{ profileFeedback }}</p>
-
-          <form
-            class="profile-form"
-            *ngIf="editingProfile"
-            [formGroup]="profileConfigForm"
-            (ngSubmit)="submitProfileConfig()"
-          >
-            <div class="form-header">
-              <h4>Actualiza tu perfil vocacional</h4>
-              <button type="button" class="ghost" (click)="cancelProfileConfig()" [disabled]="savingProfile">
-                Cancelar
+    
+        @if (profile) {
+          <section class="profile-panel">
+            <header class="profile-header">
+              <p class="eyebrow">Perfil disponible</p>
+              <h3>{{ profile.name || 'Nombre no definido' }}</h3>
+              <p class="profile-email">{{ profile.email }}</p>
+            </header>
+            <div class="profile-meta">
+              <p><strong>Edad estimada:</strong> {{ profile.age ?? 'Pendiente' }}</p>
+              <p><strong>Grado actual:</strong> {{ profile.gradeLabel || 'Sin grado definido' }}</p>
+              <p><strong>Intereses:</strong> {{ profile.interests.length ? profile.interests.join(', ') : 'Sin intereses registrados' }}</p>
+              @if (profile.preferences) {
+                <p>
+                  <strong>Preferencias:</strong>
+                  <span>Newsletter {{ profile.preferences['newsletter'] ? 'activada' : 'desactivada' }}</span>
+                  ·
+                  <span>Compartir perfil {{ profile.preferences['shareProfile'] ? 'sí' : 'no' }}</span>
+                </p>
+              }
+            </div>
+            <div class="profile-actions">
+              <button class="primary-action" type="button" (click)="openProfileConfig()">Configurar perfil</button>
+              <button
+                type="button"
+                class="secondary-action danger-action"
+                (click)="deleteAccount()"
+                [disabled]="deletingAccount"
+                >
+                {{ deletingAccount ? 'Eliminando...' : 'Eliminar cuenta' }}
               </button>
             </div>
-
-            <label class="field">
-              <span>Edad estimada</span>
-              <input
-                type="number"
-                formControlName="age"
-                min="14"
-                placeholder="Ej: 18"
-              />
-              <small class="field-error" *ngIf="profileConfigForm.controls['age'].touched && profileConfigForm.controls['age'].hasError('required')">
-                La edad es obligatoria.
-              </small>
-              <small class="field-error" *ngIf="profileConfigForm.controls['age'].touched && profileConfigForm.controls['age'].hasError('min')">
-                Ingresa una edad válida.
-              </small>
-            </label>
-
-            <label class="field">
-              <span>Grado de estudio</span>
-              <input
-                type="text"
-                formControlName="grade"
-                placeholder="Ej: superior_tecnica_2"
-              />
-              <small class="field-error" *ngIf="profileConfigForm.controls['grade'].touched && profileConfigForm.controls['grade'].hasError('required')">
-                El grado es requerido.
-              </small>
-            </label>
-
-            <label class="field">
-              <span>Intereses</span>
-              <textarea
-                formControlName="interests"
-                placeholder="Separados por comas"
-              ></textarea>
-              <small class="field-error" *ngIf="profileConfigForm.controls['interests'].touched && profileConfigForm.controls['interests'].hasError('required')">
-                Agrega al menos un interés.
-              </small>
-            </label>
-
-            <div class="form-actions">
-              <button class="primary-action" type="submit" [disabled]="profileConfigForm.invalid || savingProfile">
-                {{ savingProfile ? 'Guardando...' : 'Guardar cambios' }}
-              </button>
+            @if (profileFeedback) {
+              <p class="profile-feedback">{{ profileFeedback }}</p>
+            }
+            @if (editingProfile) {
+              <form
+                class="profile-form"
+                [formGroup]="profileConfigForm"
+                (ngSubmit)="submitProfileConfig()"
+                >
+                <div class="form-header">
+                  <h4>Actualiza tu perfil vocacional</h4>
+                  <button type="button" class="ghost" (click)="cancelProfileConfig()" [disabled]="savingProfile">
+                    Cancelar
+                  </button>
+                </div>
+                <label class="field">
+                  <span>Edad estimada</span>
+                  <input
+                    type="number"
+                    formControlName="age"
+                    min="14"
+                    placeholder="Ej: 18"
+                    />
+                    @if (profileConfigForm.controls['age'].touched && profileConfigForm.controls['age'].hasError('required')) {
+                      <small class="field-error">
+                        La edad es obligatoria.
+                      </small>
+                    }
+                    @if (profileConfigForm.controls['age'].touched && profileConfigForm.controls['age'].hasError('min')) {
+                      <small class="field-error">
+                        Ingresa una edad válida.
+                      </small>
+                    }
+                  </label>
+                  <label class="field">
+                    <span>Grado de estudio</span>
+                    <input
+                      type="text"
+                      formControlName="grade"
+                      placeholder="Ej: superior_tecnica_2"
+                      />
+                      @if (profileConfigForm.controls['grade'].touched && profileConfigForm.controls['grade'].hasError('required')) {
+                        <small class="field-error">
+                          El grado es requerido.
+                        </small>
+                      }
+                    </label>
+                    <label class="field">
+                      <span>Intereses</span>
+                      <textarea
+                        formControlName="interests"
+                        placeholder="Separados por comas"
+                      ></textarea>
+                      @if (profileConfigForm.controls['interests'].touched && profileConfigForm.controls['interests'].hasError('required')) {
+                        <small class="field-error">
+                          Agrega al menos un interés.
+                        </small>
+                      }
+                    </label>
+                    <div class="form-actions">
+                      <button class="primary-action" type="submit" [disabled]="profileConfigForm.invalid || savingProfile">
+                        {{ savingProfile ? 'Guardando...' : 'Guardar cambios' }}
+                      </button>
+                    </div>
+                  </form>
+                }
+              </section>
+            }
+          </div>
+    
+          @if (profile) {
+            <div class="status-card">
+              <h3>Estado del perfil</h3>
+              <p>Edad estimada: {{ profile.age ?? '—' }}</p>
+              <p>Intereses capturados: {{ profile.interests.length }}</p>
+              <p>{{ recommendationMessage }}</p>
             </div>
-          </form>
-        </section>
-      </div>
-
-      <div class="status-card" *ngIf="profile">
-        <h3>Estado del perfil</h3>
-        <p>Edad estimada: {{ profile.age ?? '—' }}</p>
-        <p>Intereses capturados: {{ profile.interests.length }}</p>
-        <p>{{ recommendationMessage }}</p>
-      </div>
-
-      <section style="margin-top: 4rem;">
-        <header style="text-align: center; margin-bottom: 2rem;">
-          <h2>Recursos alineados a tu prueba vocacional</h2>
-          <p class="subtitle">La plataforma cruza tus intereses con materiales validados por expertos.</p>
-        </header>
-        <p class="feedback" *ngIf="statusMessage && !loadingResources" style="text-align: center;">{{ statusMessage }}</p>
-        <div class="resource-grid">
-          <article class="resource-card" *ngFor="let resource of resources">
-            <h4>{{ resource.title }}</h4>
-            <p>{{ resource.description || 'Guía práctica para seguir avanzando.' }}</p>
-            <small *ngIf="resource.areaInteresId">Área ID: {{ resource.areaInteresId }}</small>
-          </article>
-        </div>
-        <p class="feedback" *ngIf="!resources.length && !loadingResources" style="text-align: center;">Aún no hay recomendaciones disponibles.</p>
-      </section>
-    </main>
-  `,
+          }
+    
+          <section style="margin-top: 4rem;">
+            <header style="text-align: center; margin-bottom: 2rem;">
+              <h2>Recursos alineados a tu prueba vocacional</h2>
+              <p class="subtitle">La plataforma cruza tus intereses con materiales validados por expertos.</p>
+            </header>
+            @if (statusMessage && !loadingResources) {
+              <p class="feedback" style="text-align: center;">{{ statusMessage }}</p>
+            }
+            <div class="resource-grid">
+              @for (resource of resources; track resource) {
+                <article class="resource-card">
+                  <h4>{{ resource.title }}</h4>
+                  <p>{{ resource.description || 'Guía práctica para seguir avanzando.' }}</p>
+                  @if (resource.areaInteresId) {
+                    <small>Área ID: {{ resource.areaInteresId }}</small>
+                  }
+                </article>
+              }
+            </div>
+            @if (!resources.length && !loadingResources) {
+              <p class="feedback" style="text-align: center;">Aún no hay recomendaciones disponibles.</p>
+            }
+          </section>
+        </main>
+    `,
   styles: [homePageStyles]
 })
 export class HomePageComponent implements OnInit {
