@@ -297,23 +297,23 @@ export class TestPageComponent implements OnInit {
   insightsLoading = false;
   insightsError = '';
   private readonly mbtiAvatarMap: Record<string, string> = {
-    intj: 'mbti-avatars/intj.svg',
-    intp: 'mbti-avatars/intp.svg',
-    entj: 'mbti-avatars/entj.svg',
-    entp: 'mbti-avatars/entp.svg',
-    infj: 'mbti-avatars/infj.svg',
-    infp: 'mbti-avatars/infp.svg',
-    enfj: 'mbti-avatars/enfj.svg',
-    enfp: 'mbti-avatars/enfp.svg',
-    istj: 'mbti-avatars/istj.svg',
-    isfj: 'mbti-avatars/isfj.svg',
-    estj: 'mbti-avatars/estj.svg',
-    esfj: 'mbti-avatars/esfj.svg',
-    istp: 'mbti-avatars/istp.svg',
-    isfp: 'mbti-avatars/isfp.svg',
-    estp: 'mbti-avatars/estp.svg',
-    esfp: 'mbti-avatars/esfp.svg',
-    default: 'mbti-avatars/default.svg'
+    intj: 'mbti-avatars/intj.webp',
+    intp: 'mbti-avatars/intp.webp',
+    entj: 'mbti-avatars/entj.webp',
+    entp: 'mbti-avatars/entp.webp',
+    infj: 'mbti-avatars/infj.webp',
+    infp: 'mbti-avatars/infp.webp',
+    enfj: 'mbti-avatars/enfj.webp',
+    enfp: 'mbti-avatars/enfp.webp',
+    istj: 'mbti-avatars/istj.webp',
+    isfj: 'mbti-avatars/isfj.webp',
+    estj: 'mbti-avatars/estj.webp',
+    esfj: 'mbti-avatars/esfj.webp',
+    istp: 'mbti-avatars/istp.webp',
+    isfp: 'mbti-avatars/isfp.webp',
+    estp: 'mbti-avatars/estp.webp',
+    esfp: 'mbti-avatars/esfp.webp',
+    default: 'mbti-avatars/intp.webp'
   };
 
   constructor(
