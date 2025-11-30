@@ -368,6 +368,45 @@ export const homePageStyles = `
   }
 
   .field textarea { min-height: 80px; resize: vertical; }
+
+  /* Interests Container for Checkboxes */
+  .interests-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    background: #f8fafc;
+  }
+
+  .checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0.4rem 0.5rem;
+    border-radius: 0.4rem;
+    transition: background-color 0.2s;
+  }
+
+  .checkbox-option:hover {
+    background-color: #f1f5f9;
+  }
+
+  .checkbox-option input[type="checkbox"] {
+    width: 0.9rem;
+    height: 0.9rem;
+    accent-color: var(--analyst-purple);
+    cursor: pointer;
+  }
+
   .field-error { color: #e53e3e; font-size: 0.8rem; font-weight: 400; }
 
   .form-actions {
