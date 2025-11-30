@@ -5,7 +5,7 @@ import { LearningResource } from '../../core/validators/models/learning.models';
 import { ProfileService } from '../../core/services/profile.service';
 import { RecommendationService } from '../../core/services/recommendation.service';
 import { SessionService } from '../../core/services/session.service';
-import { TestService } from '../../core/services/test.service'; // Importamos TestService
+import { TestService } from '../../core/services/test.service';
 import { extractAreaIds } from '../../core/constants/interest-area.constants';
 import { homePageStyles } from './home-page.styles';
 import { UserProfile } from '../../core/validators/models/profile.models';
@@ -62,7 +62,8 @@ import { UserProfile } from '../../core/validators/models/profile.models';
               <p><strong>Grado:</strong> {{ profile.gradeLabel || 'No definido' }}</p>
               <p><strong>Intereses:</strong> {{ profile.interests.length ? profile.interests.join(', ') : 'Sin intereses' }}</p>
               
-              @if (profileFeedback) {
+              <!-- Feedback global (fuera del modal) -->
+              @if (profileFeedback && !editingProfile) {
                 <p class="feedback-msg">{{ profileFeedback }}</p>
               }
             </div>
@@ -79,7 +80,7 @@ import { UserProfile } from '../../core/validators/models/profile.models';
                 <form [formGroup]="profileConfigForm" (ngSubmit)="submitProfileConfig()" class="edit-form">
                   <div class="form-header">
                     <h4>Actualiza tu perfil</h4>
-                    <button type="button" class="close-btn" (click)="cancelProfileConfig()">✕</button>
+                    <button type="button" class="close-btn" (click)="cancelProfileConfig()" [disabled]="editStatus === 'saving'">✕</button>
                   </div>
                   
                   <label class="field">
@@ -103,10 +104,25 @@ import { UserProfile } from '../../core/validators/models/profile.models';
                     }
                   </label>
 
+                  <!-- Feedback dentro del modal -->
+                  @if (editFeedback) {
+                    <div class="modal-feedback" [class.error]="editStatus === 'error'" [class.success]="editStatus === 'success'">
+                      {{ editFeedback }}
+                    </div>
+                  }
+
                   <div class="form-actions">
-                    <button type="button" class="secondary-action" (click)="cancelProfileConfig()">Cancelar</button>
-                    <button class="primary-action" type="submit" [disabled]="profileConfigForm.invalid || savingProfile">
-                      {{ savingProfile ? 'Guardando...' : 'Guardar' }}
+                    <button type="button" class="secondary-action" (click)="cancelProfileConfig()" [disabled]="editStatus === 'saving'">
+                      Cancelar
+                    </button>
+                    
+                    <button class="primary-action" type="submit" 
+                            [disabled]="profileConfigForm.invalid || editStatus === 'saving' || editStatus === 'success'">
+                      @switch (editStatus) {
+                        @case ('saving') { Guardando... }
+                        @case ('success') { ¡Guardado! }
+                        @default { Guardar }
+                      }
                     </button>
                   </div>
                 </form>
@@ -178,16 +194,19 @@ export class HomePageComponent implements OnInit {
   profileConfigForm: FormGroup;
   editingProfile = false;
   profileFeedback = '';
-  savingProfile = false;
+  // Estados específicos para el modal de edición
+  editStatus: 'idle' | 'saving' | 'success' | 'error' = 'idle';
+  editFeedback = '';
+  
   deletingAccount = false;
   
-  lastAssessmentId?: string; // Nueva propiedad para guardar el ID del último test
+  lastAssessmentId?: string;
 
   constructor(
     private profileService: ProfileService,
     private recommendationService: RecommendationService,
     private session: SessionService,
-    private testService: TestService, // Inyectamos el servicio de test
+    private testService: TestService,
     private router: Router,
     private fb: FormBuilder
   ) {
@@ -200,20 +219,17 @@ export class HomePageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProfile();
-    this.checkAssessments(); // Buscamos si hay tests previos al cargar
+    this.checkAssessments();
   }
 
-  // --- NUEVA LÓGICA DE RESULTADOS ---
   private checkAssessments(): void {
     const token = this.session.getAccessToken();
     if (!token) return;
 
     this.testService.listAssessments(token).subscribe({
       next: (assessments) => {
-        // Filtramos los completados
         const completed = assessments.filter(a => a.status === 'COMPLETED');
         if (completed.length > 0) {
-          // Tomamos el último (asumiendo que el backend los devuelve en orden cronológico o por ID)
           this.lastAssessmentId = completed[completed.length - 1].id;
         }
       },
@@ -226,7 +242,6 @@ export class HomePageComponent implements OnInit {
       this.router.navigate(['/test/results', this.lastAssessmentId]);
     }
   }
-  // ----------------------------------
 
   private loadProfile(): void {
     this.profileService.fetchProfile().subscribe({
@@ -292,7 +307,11 @@ export class HomePageComponent implements OnInit {
 
   openProfileConfig(): void {
     this.editingProfile = true;
+    // Resetear estados visuales
+    this.editStatus = 'idle';
+    this.editFeedback = '';
     this.profileFeedback = '';
+    this.profileConfigForm.enable();
     this.syncProfileForm();
   }
 
@@ -312,11 +331,16 @@ export class HomePageComponent implements OnInit {
     const normalizedInterests = this.normalizeInterests(interestsValue);
 
     if (!normalizedInterests.length) {
-      this.profileFeedback = 'Agrega al menos un interés válido.';
+      this.editStatus = 'error';
+      this.editFeedback = 'Agrega al menos un interés válido.';
       return;
     }
 
-    this.savingProfile = true;
+    // Iniciar proceso de guardado
+    this.editStatus = 'saving';
+    this.editFeedback = '';
+    this.profileConfigForm.disable(); // Bloquear inputs
+
     this.profileService
       .updateProfile({
         age,
@@ -326,10 +350,14 @@ export class HomePageComponent implements OnInit {
       .subscribe({
         next: (response) => {
           this.profile = response.profile;
-          this.profileFeedback = response.message ?? 'Perfil actualizado';
-          this.editingProfile = false;
-          this.statusMessage = '';
+          
+          // Mostrar éxito visualmente
+          this.editStatus = 'success';
+          this.editFeedback = '¡Perfil actualizado correctamente!';
+          
           this.syncProfileForm();
+          
+          // Actualizar recomendaciones en segundo plano
           const areaIds = extractAreaIds(this.profile.interests);
           if (areaIds) {
             this.recommendationMessage = 'Tus intereses ya alimentan recomendaciones específicas.';
@@ -337,12 +365,19 @@ export class HomePageComponent implements OnInit {
           } else {
             this.recommendationMessage = 'Actualiza tus intereses para afinar el mapa vocacional.';
           }
+
+          // Cierre automático retardado
+          setTimeout(() => {
+            this.editingProfile = false;
+            this.profileConfigForm.enable();
+            this.editStatus = 'idle';
+            this.editFeedback = '';
+          }, 1500);
         },
         error: (error: Error) => {
-          this.profileFeedback = error.message;
-        },
-        complete: () => {
-          this.savingProfile = false;
+          this.editStatus = 'error';
+          this.editFeedback = error.message || 'Error al guardar los cambios.';
+          this.profileConfigForm.enable(); // Re-habilitar formulario para corregir
         }
       });
   }
