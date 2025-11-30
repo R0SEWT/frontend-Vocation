@@ -6,7 +6,7 @@ import { ProfileService } from '../../core/services/profile.service';
 import { RecommendationService } from '../../core/services/recommendation.service';
 import { SessionService } from '../../core/services/session.service';
 import { TestService } from '../../core/services/test.service';
-import { extractAreaIds } from '../../core/constants/interest-area.constants';
+import { extractAreaIds, INTEREST_AREA_CATALOG } from '../../core/constants/interest-area.constants';
 import { homePageStyles } from './home-page.styles';
 import { UserProfile } from '../../core/validators/models/profile.models';
 
@@ -96,13 +96,23 @@ import { UserProfile } from '../../core/validators/models/profile.models';
                     <input type="text" formControlName="grade" placeholder="Ej: superior_tecnica_2" />
                   </label>
 
-                  <label class="field">
+                  <!-- LISTA DE INTERESES (CHECKBOXES) -->
+                  <div class="field">
                     <span>Intereses</span>
-                    <textarea formControlName="interests" placeholder="Separados por comas"></textarea>
-                    @if (profileConfigForm.controls['interests'].touched && profileConfigForm.controls['interests'].hasError('required')) {
-                      <small class="field-error">Agrega al menos un interés.</small>
+                    <div class="interests-container">
+                      @for (interest of interestOptions; track interest) {
+                        <label class="checkbox-option">
+                          <input type="checkbox" 
+                                 [checked]="isInterestSelected(interest)" 
+                                 (change)="toggleInterest(interest, $event)">
+                          {{ interest }}
+                        </label>
+                      }
+                    </div>
+                    @if (profileConfigForm.controls['interests'].touched && profileConfigForm.controls['interests'].invalid) {
+                      <small class="field-error">Selecciona al menos un interés.</small>
                     }
-                  </label>
+                  </div>
 
                   <!-- Feedback dentro del modal -->
                   @if (editFeedback) {
@@ -194,13 +204,16 @@ export class HomePageComponent implements OnInit {
   profileConfigForm: FormGroup;
   editingProfile = false;
   profileFeedback = '';
-  // Estados específicos para el modal de edición
+  
+  // Estados del modal
   editStatus: 'idle' | 'saving' | 'success' | 'error' = 'idle';
   editFeedback = '';
   
   deletingAccount = false;
-  
   lastAssessmentId?: string;
+
+  // Lista de intereses disponibles desde el catálogo
+  interestOptions: string[] = Object.keys(INTEREST_AREA_CATALOG);
 
   constructor(
     private profileService: ProfileService,
@@ -213,7 +226,7 @@ export class HomePageComponent implements OnInit {
     this.profileConfigForm = this.fb.group({
       age: [null, [Validators.required, Validators.min(14)]],
       grade: ['', Validators.required],
-      interests: ['', Validators.required]
+      interests: [[], Validators.required] // Inicializar como array vacío
     });
   }
 
@@ -307,7 +320,6 @@ export class HomePageComponent implements OnInit {
 
   openProfileConfig(): void {
     this.editingProfile = true;
-    // Resetear estados visuales
     this.editStatus = 'idle';
     this.editFeedback = '';
     this.profileFeedback = '';
@@ -319,6 +331,28 @@ export class HomePageComponent implements OnInit {
     this.editingProfile = false;
   }
 
+  // --- Lógica para manejo de Checkboxes ---
+  isInterestSelected(interest: string): boolean {
+    const currentInterests = this.profileConfigForm.controls['interests'].value as string[] || [];
+    return currentInterests.includes(interest);
+  }
+
+  toggleInterest(interest: string, event: Event): void {
+    const isChecked = (event.target as HTMLInputElement).checked;
+    const currentInterests = this.profileConfigForm.controls['interests'].value as string[] || [];
+    
+    let newInterests: string[];
+    if (isChecked) {
+      newInterests = [...currentInterests, interest];
+    } else {
+      newInterests = currentInterests.filter(i => i !== interest);
+    }
+
+    this.profileConfigForm.patchValue({ interests: newInterests });
+    this.profileConfigForm.controls['interests'].markAsTouched();
+  }
+  // ----------------------------------------
+
   submitProfileConfig(): void {
     if (this.profileConfigForm.invalid) {
       this.profileConfigForm.markAllAsTouched();
@@ -326,38 +360,33 @@ export class HomePageComponent implements OnInit {
     }
 
     const { age, grade, interests } = this.profileConfigForm.value;
-    const interestsValue = interests ?? '';
     const gradeValue = (grade ?? '').trim();
-    const normalizedInterests = this.normalizeInterests(interestsValue);
+    // interests ya es un array de strings, no necesitamos normalizar
+    const selectedInterests = interests as string[] || [];
 
-    if (!normalizedInterests.length) {
+    if (!selectedInterests.length) {
       this.editStatus = 'error';
-      this.editFeedback = 'Agrega al menos un interés válido.';
+      this.editFeedback = 'Selecciona al menos un interés.';
       return;
     }
 
-    // Iniciar proceso de guardado
     this.editStatus = 'saving';
     this.editFeedback = '';
-    this.profileConfigForm.disable(); // Bloquear inputs
+    this.profileConfigForm.disable();
 
     this.profileService
       .updateProfile({
         age,
         grade: gradeValue,
-        interests: normalizedInterests
+        interests: selectedInterests
       })
       .subscribe({
         next: (response) => {
           this.profile = response.profile;
-          
-          // Mostrar éxito visualmente
           this.editStatus = 'success';
           this.editFeedback = '¡Perfil actualizado correctamente!';
-          
           this.syncProfileForm();
           
-          // Actualizar recomendaciones en segundo plano
           const areaIds = extractAreaIds(this.profile.interests);
           if (areaIds) {
             this.recommendationMessage = 'Tus intereses ya alimentan recomendaciones específicas.';
@@ -366,7 +395,6 @@ export class HomePageComponent implements OnInit {
             this.recommendationMessage = 'Actualiza tus intereses para afinar el mapa vocacional.';
           }
 
-          // Cierre automático retardado
           setTimeout(() => {
             this.editingProfile = false;
             this.profileConfigForm.enable();
@@ -377,7 +405,7 @@ export class HomePageComponent implements OnInit {
         error: (error: Error) => {
           this.editStatus = 'error';
           this.editFeedback = error.message || 'Error al guardar los cambios.';
-          this.profileConfigForm.enable(); // Re-habilitar formulario para corregir
+          this.profileConfigForm.enable();
         }
       });
   }
@@ -416,23 +444,8 @@ export class HomePageComponent implements OnInit {
     this.profileConfigForm.patchValue({
       age: this.profile?.age ?? null,
       grade: this.profile?.grade ?? '',
-      interests: (this.profile?.interests ?? []).join(', ')
+      // Asignamos el array directamente
+      interests: this.profile?.interests ?? []
     });
-  }
-
-  private normalizeInterests(raw: string): string[] {
-    const normalized = raw
-      .split(',')
-      .map((interest) => interest.trim())
-      .filter(Boolean)
-      .map((interest) => interest.replace(/\s+/g, ' '));
-    const unique: string[] = [];
-    normalized.forEach((interest) => {
-      const exists = unique.some((item) => item.toLowerCase() === interest.toLowerCase());
-      if (!exists) {
-        unique.push(interest);
-      }
-    });
-    return unique;
   }
 }
