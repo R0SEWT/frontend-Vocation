@@ -21,7 +21,7 @@ import { UserProfile } from '../../core/validators/models/profile.models';
           <p class="eyebrow">Descubre tu camino</p>
           <h1>Explora tus resultados <span class="highlight">vocacionales</span></h1>
           <p class="hero-subtitle">
-            {{ profile?.email || 'Completa tu perfil' }} · {{ profile?.gradeLabel || 'Sin grado definido' }}
+            {{ profile?.email || 'Completa tu perfil' }} · {{ getGradeLabel(profile?.grade) || 'Sin grado definido' }}
           </p>
           <div class="hero-actions">
             <button class="primary-action" (click)="takeVocationalTest()">Realizar test vocacional</button>
@@ -59,10 +59,10 @@ import { UserProfile } from '../../core/validators/models/profile.models';
             
             <div class="profile-body">
               <p><strong>Edad:</strong> {{ profile.age ?? '--' }} años</p>
-              <p><strong>Grado:</strong> {{ profile.gradeLabel || 'No definido' }}</p>
+              <p><strong>Grado:</strong> {{ getGradeLabel(profile.grade) || 'No definido' }}</p>
               <p><strong>Intereses:</strong> {{ profile.interests.length ? profile.interests.join(', ') : 'Sin intereses' }}</p>
               
-              <!-- Feedback global (fuera del modal) -->
+              <!-- Feedback global -->
               @if (profileFeedback && !editingProfile) {
                 <p class="feedback-msg">{{ profileFeedback }}</p>
               }
@@ -91,12 +91,21 @@ import { UserProfile } from '../../core/validators/models/profile.models';
                     }
                   </label>
 
+                  <!-- Selector de Grado -->
                   <label class="field">
                     <span>Grado de estudio</span>
-                    <input type="text" formControlName="grade" placeholder="Ej: superior_tecnica_2" />
+                    <select formControlName="grade">
+                      <option value="" disabled>Selecciona tu grado</option>
+                      @for (option of gradeOptions; track option.value) {
+                        <option [value]="option.value">{{ option.label }}</option>
+                      }
+                    </select>
+                    @if (profileConfigForm.controls['grade'].touched && profileConfigForm.controls['grade'].hasError('required')) {
+                      <small class="field-error">Selecciona un grado.</small>
+                    }
                   </label>
 
-                  <!-- LISTA DE INTERESES (CHECKBOXES) -->
+                  <!-- Lista de Intereses -->
                   <div class="field">
                     <span>Intereses</span>
                     <div class="interests-container">
@@ -114,7 +123,6 @@ import { UserProfile } from '../../core/validators/models/profile.models';
                     }
                   </div>
 
-                  <!-- Feedback dentro del modal -->
                   @if (editFeedback) {
                     <div class="modal-feedback" [class.error]="editStatus === 'error'" [class.success]="editStatus === 'success'">
                       {{ editFeedback }}
@@ -204,16 +212,27 @@ export class HomePageComponent implements OnInit {
   profileConfigForm: FormGroup;
   editingProfile = false;
   profileFeedback = '';
-  
-  // Estados del modal
   editStatus: 'idle' | 'saving' | 'success' | 'error' = 'idle';
   editFeedback = '';
-  
   deletingAccount = false;
   lastAssessmentId?: string;
 
-  // Lista de intereses disponibles desde el catálogo
   interestOptions: string[] = Object.keys(INTEREST_AREA_CATALOG);
+
+  gradeOptions = [
+    { value: 'secundaria_3', label: '3° de Secundaria' },
+    { value: 'secundaria_4', label: '4° de Secundaria' },
+    { value: 'secundaria_5', label: '5° de Secundaria' },
+    { value: 'superior_tecnica_1', label: 'Superior Técnica - 1° Año' },
+    { value: 'superior_tecnica_2', label: 'Superior Técnica - 2° Año' },
+    { value: 'superior_tecnica_3', label: 'Superior Técnica - 3° Año' },
+    { value: 'superior_universitaria_1', label: 'Universitaria - 1° Año' },
+    { value: 'superior_universitaria_2', label: 'Universitaria - 2° Año' },
+    { value: 'superior_universitaria_3', label: 'Universitaria - 3° Año' },
+    { value: 'superior_universitaria_4', label: 'Universitaria - 4° Año' },
+    { value: 'superior_universitaria_5', label: 'Universitaria - 5° Año' },
+    { value: 'egresado', label: 'Egresado' }
+  ];
 
   constructor(
     private profileService: ProfileService,
@@ -226,13 +245,19 @@ export class HomePageComponent implements OnInit {
     this.profileConfigForm = this.fb.group({
       age: [null, [Validators.required, Validators.min(14)]],
       grade: ['', Validators.required],
-      interests: [[], Validators.required] // Inicializar como array vacío
+      interests: [[], Validators.required]
     });
   }
 
   ngOnInit(): void {
     this.loadProfile();
     this.checkAssessments();
+  }
+
+  getGradeLabel(value?: string): string {
+    if (!value) return '';
+    const option = this.gradeOptions.find(o => o.value === value);
+    return option ? option.label : value;
   }
 
   private checkAssessments(): void {
@@ -246,7 +271,7 @@ export class HomePageComponent implements OnInit {
           this.lastAssessmentId = completed[completed.length - 1].id;
         }
       },
-      error: (err) => console.error('Error verificando historial de tests', err)
+      error: (err) => console.error('Error verificando historial', err)
     });
   }
 
@@ -331,7 +356,6 @@ export class HomePageComponent implements OnInit {
     this.editingProfile = false;
   }
 
-  // --- Lógica para manejo de Checkboxes ---
   isInterestSelected(interest: string): boolean {
     const currentInterests = this.profileConfigForm.controls['interests'].value as string[] || [];
     return currentInterests.includes(interest);
@@ -351,7 +375,6 @@ export class HomePageComponent implements OnInit {
     this.profileConfigForm.patchValue({ interests: newInterests });
     this.profileConfigForm.controls['interests'].markAsTouched();
   }
-  // ----------------------------------------
 
   submitProfileConfig(): void {
     if (this.profileConfigForm.invalid) {
@@ -359,12 +382,15 @@ export class HomePageComponent implements OnInit {
       return;
     }
 
-    const { age, grade, interests } = this.profileConfigForm.value;
-    const gradeValue = (grade ?? '').trim();
-    // interests ya es un array de strings, no necesitamos normalizar
-    const selectedInterests = interests as string[] || [];
+    // Usamos getRawValue para asegurar que obtenemos el valor aunque estuviera deshabilitado
+    const rawValue = this.profileConfigForm.getRawValue();
+    
+    // Forzamos conversión de tipos para asegurar que el payload es exacto
+    const age = Number(rawValue.age); 
+    const grade = (rawValue.grade ?? '').trim();
+    const interests = rawValue.interests as string[] || [];
 
-    if (!selectedInterests.length) {
+    if (!interests.length) {
       this.editStatus = 'error';
       this.editFeedback = 'Selecciona al menos un interés.';
       return;
@@ -377,12 +403,19 @@ export class HomePageComponent implements OnInit {
     this.profileService
       .updateProfile({
         age,
-        grade: gradeValue,
-        interests: selectedInterests
+        grade,
+        interests
       })
       .subscribe({
         next: (response) => {
           this.profile = response.profile;
+          
+          // Verificar si el backend realmente guardó el cambio comparando
+          if (this.profile.grade !== grade) {
+             console.warn('El backend devolvió un grado diferente al enviado:', this.profile.grade);
+             // Opcional: podrías mostrar un warning aquí si fuera crítico
+          }
+
           this.editStatus = 'success';
           this.editFeedback = '¡Perfil actualizado correctamente!';
           this.syncProfileForm();
@@ -444,7 +477,6 @@ export class HomePageComponent implements OnInit {
     this.profileConfigForm.patchValue({
       age: this.profile?.age ?? null,
       grade: this.profile?.grade ?? '',
-      // Asignamos el array directamente
       interests: this.profile?.interests ?? []
     });
   }

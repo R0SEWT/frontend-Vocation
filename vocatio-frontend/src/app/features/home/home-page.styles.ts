@@ -144,6 +144,18 @@ export const homePageStyles = `
     line-height: 1.6;
   }
 
+  .feedback-msg {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+  }
+
   .card-actions {
     display: flex;
     gap: 1rem;
@@ -352,6 +364,7 @@ export const homePageStyles = `
   }
 
   .field input,
+  .field select,
   .field textarea {
     background: #f8fafc;
     border: 1px solid #cbd5e1;
@@ -361,8 +374,12 @@ export const homePageStyles = `
     font-size: 1rem;
     color: var(--text-color);
   }
-  
-  .field input:focus, .field textarea:focus {
+
+  .field select {
+    cursor: pointer;
+  }
+
+  .field input:focus, .field select:focus, .field textarea:focus {
     outline: 2px solid var(--analyst-purple);
     border-color: transparent;
   }
