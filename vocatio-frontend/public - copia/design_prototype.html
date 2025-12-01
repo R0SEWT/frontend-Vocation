@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocatio - MBTI Prototype</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --analyst-purple: #88619a;
+            --diplomat-green: #33a474;
+            --sentinel-blue: #4298b4;
+            --explorer-yellow: #e2a62b;
+            --bg-color: #f0f4f8;
+            --text-color: #2d3748;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--analyst-purple);
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--text-color);
+            margin-left: 1.5rem;
+            font-weight: 600;
+        }
+
+        .hero {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(136,97,154,0.1) 0%, rgba(51,164,116,0.1) 100%);
+        }
+
+        .hero-content {
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            color: var(--text-color);
+        }
+
+        .highlight {
+            color: var(--diplomat-green);
+        }
+
+        p {
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 2.5rem;
+            color: #4a5568;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: var(--analyst-purple);
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 14px rgba(136,97,154,0.4);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(136,97,154,0.6);
+        }
+
+        .characters {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .character-card {
+            width: 120px;
+            height: 160px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 2rem;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+        }
+
+        .analyst { background-color: var(--analyst-purple); }
+        .diplomat { background-color: var(--diplomat-green); }
+        .sentinel { background-color: var(--sentinel-blue); }
+        .explorer { background-color: var(--explorer-yellow); }
+
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Vocatio</div>
+        <nav>
+            <a href="#">Home</a>
+            <a href="#">Test</a>
+            <a href="#">Login</a>
+        </nav>
+    </header>
+
+    <div class="hero">
+        <div class="hero-content">
+            <h1>Discover Your <span class="highlight">True Path</span></h1>
+            <p>Uncover your potential with our MBTI-based vocation test. Let your personality guide your career journey.</p>
+            <a href="#" class="cta-button">Start the Test</a>
+
+            <div class="characters">
+                <div class="character-card analyst">INTJ</div>
+                <div class="character-card diplomat">ENFP</div>
+                <div class="character-card sentinel">ISTJ</div>
+                <div class="character-card explorer">ESTP</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

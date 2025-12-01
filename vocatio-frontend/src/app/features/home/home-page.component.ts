@@ -5,8 +5,8 @@ import { LearningResource } from '../../core/validators/models/learning.models';
 import { ProfileService } from '../../core/services/profile.service';
 import { RecommendationService } from '../../core/services/recommendation.service';
 import { SessionService } from '../../core/services/session.service';
-import { TestService } from '../../core/services/test.service'; // Importamos TestService
-import { extractAreaIds } from '../../core/constants/interest-area.constants';
+import { TestService } from '../../core/services/test.service';
+import { extractAreaIds, INTEREST_AREA_CATALOG } from '../../core/constants/interest-area.constants';
 import { homePageStyles } from './home-page.styles';
 import { UserProfile } from '../../core/validators/models/profile.models';
 
@@ -21,7 +21,7 @@ import { UserProfile } from '../../core/validators/models/profile.models';
           <p class="eyebrow">Descubre tu camino</p>
           <h1>Explora tus resultados <span class="highlight">vocacionales</span></h1>
           <p class="hero-subtitle">
-            {{ profile?.email || 'Completa tu perfil' }} · {{ profile?.gradeLabel || 'Sin grado definido' }}
+            {{ profile?.email || 'Completa tu perfil' }} · {{ getGradeLabel(profile?.grade) || 'Sin grado definido' }}
           </p>
           <div class="hero-actions">
             <button class="primary-action" (click)="takeVocationalTest()">Realizar test vocacional</button>
@@ -59,10 +59,11 @@ import { UserProfile } from '../../core/validators/models/profile.models';
             
             <div class="profile-body">
               <p><strong>Edad:</strong> {{ profile.age ?? '--' }} años</p>
-              <p><strong>Grado:</strong> {{ profile.gradeLabel || 'No definido' }}</p>
+              <p><strong>Grado:</strong> {{ getGradeLabel(profile.grade) || 'No definido' }}</p>
               <p><strong>Intereses:</strong> {{ profile.interests.length ? profile.interests.join(', ') : 'Sin intereses' }}</p>
               
-              @if (profileFeedback) {
+              <!-- Feedback global -->
+              @if (profileFeedback && !editingProfile) {
                 <p class="feedback-msg">{{ profileFeedback }}</p>
               }
             </div>
@@ -79,7 +80,7 @@ import { UserProfile } from '../../core/validators/models/profile.models';
                 <form [formGroup]="profileConfigForm" (ngSubmit)="submitProfileConfig()" class="edit-form">
                   <div class="form-header">
                     <h4>Actualiza tu perfil</h4>
-                    <button type="button" class="close-btn" (click)="cancelProfileConfig()">✕</button>
+                    <button type="button" class="close-btn" (click)="cancelProfileConfig()" [disabled]="editStatus === 'saving'">✕</button>
                   </div>
                   
                   <label class="field">
@@ -90,23 +91,56 @@ import { UserProfile } from '../../core/validators/models/profile.models';
                     }
                   </label>
 
+                  <!-- Selector de Grado -->
                   <label class="field">
                     <span>Grado de estudio</span>
-                    <input type="text" formControlName="grade" placeholder="Ej: superior_tecnica_2" />
-                  </label>
-
-                  <label class="field">
-                    <span>Intereses</span>
-                    <textarea formControlName="interests" placeholder="Separados por comas"></textarea>
-                    @if (profileConfigForm.controls['interests'].touched && profileConfigForm.controls['interests'].hasError('required')) {
-                      <small class="field-error">Agrega al menos un interés.</small>
+                    <select formControlName="grade">
+                      <option value="" disabled>Selecciona tu último grado aprobado</option>
+                      @for (option of gradeOptions; track option.value) {
+                        <option [value]="option.value">{{ option.label }}</option>
+                      }
+                    </select>
+                    @if (profileConfigForm.controls['grade'].touched && profileConfigForm.controls['grade'].hasError('required')) {
+                      <small class="field-error">Selecciona un grado.</small>
                     }
                   </label>
 
+                  <!-- Lista de Intereses -->
+                  <div class="field">
+                    <span>Intereses</span>
+                    <div class="interests-container">
+                      @for (interest of interestOptions; track interest) {
+                        <label class="checkbox-option">
+                          <input type="checkbox" 
+                                 [checked]="isInterestSelected(interest)" 
+                                 (change)="toggleInterest(interest, $event)">
+                          {{ interest }}
+                        </label>
+                      }
+                    </div>
+                    @if (profileConfigForm.controls['interests'].touched && profileConfigForm.controls['interests'].invalid) {
+                      <small class="field-error">Selecciona al menos un interés.</small>
+                    }
+                  </div>
+
+                  @if (editFeedback) {
+                    <div class="modal-feedback" [class.error]="editStatus === 'error'" [class.success]="editStatus === 'success'">
+                      {{ editFeedback }}
+                    </div>
+                  }
+
                   <div class="form-actions">
-                    <button type="button" class="secondary-action" (click)="cancelProfileConfig()">Cancelar</button>
-                    <button class="primary-action" type="submit" [disabled]="profileConfigForm.invalid || savingProfile">
-                      {{ savingProfile ? 'Guardando...' : 'Guardar' }}
+                    <button type="button" class="secondary-action" (click)="cancelProfileConfig()" [disabled]="editStatus === 'saving'">
+                      Cancelar
+                    </button>
+                    
+                    <button class="primary-action" type="submit" 
+                            [disabled]="profileConfigForm.invalid || editStatus === 'saving' || editStatus === 'success'">
+                      @switch (editStatus) {
+                        @case ('saving') { Guardando... }
+                        @case ('success') { ¡Guardado! }
+                        @default { Guardar }
+                      }
                     </button>
                   </div>
                 </form>
@@ -178,46 +212,71 @@ export class HomePageComponent implements OnInit {
   profileConfigForm: FormGroup;
   editingProfile = false;
   profileFeedback = '';
-  savingProfile = false;
+  editStatus: 'idle' | 'saving' | 'success' | 'error' = 'idle';
+  editFeedback = '';
   deletingAccount = false;
-  
-  lastAssessmentId?: string; // Nueva propiedad para guardar el ID del último test
+  lastAssessmentId?: string;
+
+  interestOptions: string[] = Object.keys(INTEREST_AREA_CATALOG);
+
+  // ACTUALIZADO: Lista completa de grados incluyendo hasta UNIVERSIDAD_6_MAS
+  gradeOptions = [
+    { value: 'SECUNDARIA_1', label: '1° de secundaria' },
+    { value: 'SECUNDARIA_2', label: '2° de secundaria' },
+    { value: 'SECUNDARIA_3', label: '3° de secundaria' },
+    { value: 'SECUNDARIA_4', label: '4° de secundaria' },
+    { value: 'SECUNDARIA_5', label: '5° de secundaria' },
+    { value: 'SUPERIOR_TECNICA_1', label: '1° ciclo de instituto técnico' },
+    { value: 'SUPERIOR_TECNICA_2', label: '2° ciclo de instituto técnico' },
+    { value: 'SUPERIOR_TECNICA_3', label: '3° ciclo de instituto técnico' },
+    { value: 'SUPERIOR_TECNICA_4', label: '4° ciclo de instituto técnico' },
+    { value: 'SUPERIOR_TECNICA_5_MAS', label: '5° ciclo o más de instituto técnico' },
+    { value: 'UNIVERSIDAD_1', label: '1° ciclo universitario' },
+    { value: 'UNIVERSIDAD_2', label: '2° ciclo universitario' },
+    { value: 'UNIVERSIDAD_3', label: '3° ciclo universitario' },
+    { value: 'UNIVERSIDAD_4', label: '4° ciclo universitario' },
+    { value: 'UNIVERSIDAD_5', label: '5° ciclo universitario' },
+    { value: 'UNIVERSIDAD_6_MAS', label: '6° ciclo o más universitario' }
+  ];
 
   constructor(
     private profileService: ProfileService,
     private recommendationService: RecommendationService,
     private session: SessionService,
-    private testService: TestService, // Inyectamos el servicio de test
+    private testService: TestService,
     private router: Router,
     private fb: FormBuilder
   ) {
     this.profileConfigForm = this.fb.group({
       age: [null, [Validators.required, Validators.min(14)]],
       grade: ['', Validators.required],
-      interests: ['', Validators.required]
+      interests: [[], Validators.required]
     });
   }
 
   ngOnInit(): void {
     this.loadProfile();
-    this.checkAssessments(); // Buscamos si hay tests previos al cargar
+    this.checkAssessments();
   }
 
-  // --- NUEVA LÓGICA DE RESULTADOS ---
+  getGradeLabel(value?: string): string {
+    if (!value) return '';
+    const option = this.gradeOptions.find(o => o.value === value);
+    return option ? option.label : value;
+  }
+
   private checkAssessments(): void {
     const token = this.session.getAccessToken();
     if (!token) return;
 
     this.testService.listAssessments(token).subscribe({
       next: (assessments) => {
-        // Filtramos los completados
         const completed = assessments.filter(a => a.status === 'COMPLETED');
         if (completed.length > 0) {
-          // Tomamos el último (asumiendo que el backend los devuelve en orden cronológico o por ID)
           this.lastAssessmentId = completed[completed.length - 1].id;
         }
       },
-      error: (err) => console.error('Error verificando historial de tests', err)
+      error: (err) => console.error('Error verificando historial', err)
     });
   }
 
@@ -226,7 +285,6 @@ export class HomePageComponent implements OnInit {
       this.router.navigate(['/test/results', this.lastAssessmentId]);
     }
   }
-  // ----------------------------------
 
   private loadProfile(): void {
     this.profileService.fetchProfile().subscribe({
@@ -292,12 +350,35 @@ export class HomePageComponent implements OnInit {
 
   openProfileConfig(): void {
     this.editingProfile = true;
+    this.editStatus = 'idle';
+    this.editFeedback = '';
     this.profileFeedback = '';
+    this.profileConfigForm.enable();
     this.syncProfileForm();
   }
 
   cancelProfileConfig(): void {
     this.editingProfile = false;
+  }
+
+  isInterestSelected(interest: string): boolean {
+    const currentInterests = this.profileConfigForm.controls['interests'].value as string[] || [];
+    return currentInterests.includes(interest);
+  }
+
+  toggleInterest(interest: string, event: Event): void {
+    const isChecked = (event.target as HTMLInputElement).checked;
+    const currentInterests = this.profileConfigForm.controls['interests'].value as string[] || [];
+    
+    let newInterests: string[];
+    if (isChecked) {
+      newInterests = [...currentInterests, interest];
+    } else {
+      newInterests = currentInterests.filter(i => i !== interest);
+    }
+
+    this.profileConfigForm.patchValue({ interests: newInterests });
+    this.profileConfigForm.controls['interests'].markAsTouched();
   }
 
   submitProfileConfig(): void {
@@ -306,30 +387,44 @@ export class HomePageComponent implements OnInit {
       return;
     }
 
-    const { age, grade, interests } = this.profileConfigForm.value;
-    const interestsValue = interests ?? '';
-    const gradeValue = (grade ?? '').trim();
-    const normalizedInterests = this.normalizeInterests(interestsValue);
+    // Usamos getRawValue para asegurar que obtenemos el valor aunque estuviera deshabilitado
+    const rawValue = this.profileConfigForm.getRawValue();
+    
+    // Forzamos conversión de tipos para asegurar que el payload es exacto
+    const age = Number(rawValue.age); 
+    const grade = (rawValue.grade ?? '').trim();
+    const interests = rawValue.interests as string[] || [];
 
-    if (!normalizedInterests.length) {
-      this.profileFeedback = 'Agrega al menos un interés válido.';
+    if (!interests.length) {
+      this.editStatus = 'error';
+      this.editFeedback = 'Selecciona al menos un interés.';
       return;
     }
 
-    this.savingProfile = true;
+    this.editStatus = 'saving';
+    this.editFeedback = '';
+    this.profileConfigForm.disable();
+
     this.profileService
       .updateProfile({
         age,
-        grade: gradeValue,
-        interests: normalizedInterests
+        grade,
+        interests
       })
       .subscribe({
         next: (response) => {
           this.profile = response.profile;
-          this.profileFeedback = response.message ?? 'Perfil actualizado';
-          this.editingProfile = false;
-          this.statusMessage = '';
+          
+          // Verificar si el backend realmente guardó el cambio comparando
+          if (this.profile.grade !== grade) {
+             console.warn('El backend devolvió un grado diferente al enviado:', this.profile.grade);
+             // Opcional: podrías mostrar un warning aquí si fuera crítico
+          }
+
+          this.editStatus = 'success';
+          this.editFeedback = '¡Perfil actualizado correctamente!';
           this.syncProfileForm();
+          
           const areaIds = extractAreaIds(this.profile.interests);
           if (areaIds) {
             this.recommendationMessage = 'Tus intereses ya alimentan recomendaciones específicas.';
@@ -337,12 +432,18 @@ export class HomePageComponent implements OnInit {
           } else {
             this.recommendationMessage = 'Actualiza tus intereses para afinar el mapa vocacional.';
           }
+
+          setTimeout(() => {
+            this.editingProfile = false;
+            this.profileConfigForm.enable();
+            this.editStatus = 'idle';
+            this.editFeedback = '';
+          }, 1500);
         },
         error: (error: Error) => {
-          this.profileFeedback = error.message;
-        },
-        complete: () => {
-          this.savingProfile = false;
+          this.editStatus = 'error';
+          this.editFeedback = error.message || 'Error al guardar los cambios.';
+          this.profileConfigForm.enable();
         }
       });
   }
@@ -381,23 +482,7 @@ export class HomePageComponent implements OnInit {
     this.profileConfigForm.patchValue({
       age: this.profile?.age ?? null,
       grade: this.profile?.grade ?? '',
-      interests: (this.profile?.interests ?? []).join(', ')
+      interests: this.profile?.interests ?? []
     });
-  }
-
-  private normalizeInterests(raw: string): string[] {
-    const normalized = raw
-      .split(',')
-      .map((interest) => interest.trim())
-      .filter(Boolean)
-      .map((interest) => interest.replace(/\s+/g, ' '));
-    const unique: string[] = [];
-    normalized.forEach((interest) => {
-      const exists = unique.some((item) => item.toLowerCase() === interest.toLowerCase());
-      if (!exists) {
-        unique.push(interest);
-      }
-    });
-    return unique;
   }
 }

@@ -144,6 +144,18 @@ export const homePageStyles = `
     line-height: 1.6;
   }
 
+  .feedback-msg {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+  }
+
   .card-actions {
     display: flex;
     gap: 1rem;
@@ -256,6 +268,13 @@ export const homePageStyles = `
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(136,97,154,0.3);
   }
+
+  .primary-action[disabled] {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
   
   .primary-action.small { padding: 0.5rem 1.25rem; font-size: 0.9rem; }
 
@@ -275,6 +294,13 @@ export const homePageStyles = `
   .secondary-action:hover {
     border-color: var(--analyst-purple);
     color: var(--analyst-purple);
+  }
+
+  .secondary-action[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: #e2e8f0;
+    color: var(--text-color);
   }
 
   .text-action.danger {
@@ -326,6 +352,7 @@ export const homePageStyles = `
   }
   .form-header h4 { margin: 0; font-size: 1.2rem; }
   .close-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #94a3b8; }
+  .close-btn[disabled] { cursor: not-allowed; opacity: 0.5; }
 
   .field {
     display: flex;
@@ -337,6 +364,7 @@ export const homePageStyles = `
   }
 
   .field input,
+  .field select,
   .field textarea {
     background: #f8fafc;
     border: 1px solid #cbd5e1;
@@ -346,13 +374,57 @@ export const homePageStyles = `
     font-size: 1rem;
     color: var(--text-color);
   }
-  
-  .field input:focus, .field textarea:focus {
+
+  .field select {
+    cursor: pointer;
+    min-width: 280px;
+  }
+
+  .field input:focus, .field select:focus, .field textarea:focus {
     outline: 2px solid var(--analyst-purple);
     border-color: transparent;
   }
 
   .field textarea { min-height: 80px; resize: vertical; }
+
+  /* Interests Container for Checkboxes */
+  .interests-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    background: #f8fafc;
+  }
+
+  .checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0.4rem 0.5rem;
+    border-radius: 0.4rem;
+    transition: background-color 0.2s;
+  }
+
+  .checkbox-option:hover {
+    background-color: #f1f5f9;
+  }
+
+  .checkbox-option input[type="checkbox"] {
+    width: 0.9rem;
+    height: 0.9rem;
+    accent-color: var(--analyst-purple);
+    cursor: pointer;
+  }
+
   .field-error { color: #e53e3e; font-size: 0.8rem; font-weight: 400; }
 
   .form-actions {
@@ -375,5 +447,27 @@ export const homePageStyles = `
     color: var(--analyst-purple);
     font-weight: 600;
     margin: 2rem 0;
+  }
+
+  /* --- Feedback Styles inside Modal --- */
+  .modal-feedback {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    text-align: center;
+    font-weight: 700;
+    margin-top: 0.5rem;
+  }
+
+  .modal-feedback.error {
+    background-color: #fef2f2;
+    color: #ef4444;
+    border: 1px solid #fee2e2;
+  }
+
+  .modal-feedback.success {
+    background-color: #f0fdf4;
+    color: var(--diplomat-green);
+    border: 1px solid #dcfce7;
   }
 `;
