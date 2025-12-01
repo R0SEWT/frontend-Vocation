@@ -210,13 +210,14 @@ export const testPageStyles = `
   color: #718096;
 }
 
-.feedback-block {
-  margin-top: 1.5rem;
+.char-counter {
+  font-weight: 600;
+  margin-left: 0.25rem;
+  color: var(--analyst-purple);
 }
 
-.feedback-hint {
-  font-size: 0.85rem;
-  color: #64748b;
+.char-counter.invalid {
+  color: #dc2626;
 }
 
 .field-error {
