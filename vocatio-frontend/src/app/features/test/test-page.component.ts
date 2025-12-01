@@ -174,11 +174,34 @@ const FALLBACK_QUESTIONS: TestQuestion[] = [
               }
             </section>
 
+            <section class="insight-notes feedback-block">
+              <label>
+                <span>Comparte al menos 50 caracteres sobre tu experiencia antes de iniciar un nuevo test</span>
+                <textarea
+                  rows="4"
+                  maxlength="400"
+                  [formControl]="feedbackControl"
+                  placeholder="Escribe tu evaluación..."
+                ></textarea>
+                <small class="feedback-hint">
+                  {{ feedbackCharCount }}/50 caracteres mínimos
+                  @if (!hasMinimumFeedback && feedbackControl.touched) {
+                    · Necesitamos un poco más de detalle
+                  }
+                </small>
+              </label>
+            </section>
+
             <div class="results-actions">
               <button class="primary-action" type="button" (click)="goToHome()">Ir al Inicio</button>
-              @if (viewMode === 'result') {
-                <button class="secondary-action" type="button" (click)="retakeTest()">Realizar nuevo test</button>
-              }
+              <button
+                class="secondary-action"
+                type="button"
+                (click)="retakeTest()"
+                [disabled]="!hasMinimumFeedback"
+              >
+                Realizar nuevo test
+              </button>
             </div>
           </section>
         }
@@ -204,6 +227,7 @@ export class TestPageComponent implements OnInit {
   private readonly useRemoteTestApi = FEATURE_FLAGS.useRemoteTestApi;
   
   opinionControl = new FormControl('', [Validators.maxLength(400)]);
+  feedbackControl = new FormControl('', [Validators.maxLength(400)]);
   
   insights?: VocationalInsights;
   
@@ -266,6 +290,9 @@ export class TestPageComponent implements OnInit {
       this.router.navigate(['/auth/login']);
       return;
     }
+    this.feedbackControl.reset('');
+    this.feedbackControl.markAsPristine();
+    this.feedbackControl.markAsUntouched();
 
     this.loading = true;
     this.loadingMessage = 'Recuperando resultados guardados...';
@@ -310,6 +337,9 @@ export class TestPageComponent implements OnInit {
     this.answerValues = {};
     this.showResults = false;
     this.opinionControl.enable();
+    this.feedbackControl.reset('');
+    this.feedbackControl.markAsPristine();
+    this.feedbackControl.markAsUntouched();
     this.submissionResult = undefined;
     this.usingFallback = false;
     this.assessmentId = undefined;
@@ -414,6 +444,9 @@ export class TestPageComponent implements OnInit {
     if (this.usingFallback) {
         // Lógica local simple
         this.showResults = true;
+        this.feedbackControl.reset('');
+        this.feedbackControl.markAsPristine();
+        this.feedbackControl.markAsUntouched();
         this.insights = { mbtiProfile: 'DEMO', suggestedCareers: ['Tecnología', 'Ciencias'], profileSummary: 'Modo local finalizado.' };
         return;
     }
@@ -424,6 +457,9 @@ export class TestPageComponent implements OnInit {
     this.loading = true;
     this.loadingMessage = 'Analizando tus respuestas con IA...';
     this.showResults = true;
+    this.feedbackControl.reset('');
+    this.feedbackControl.markAsPristine();
+    this.feedbackControl.markAsUntouched();
 
     const answersPayload = this.questions.map(q => ({
         questionId: q.id,
@@ -453,7 +489,19 @@ export class TestPageComponent implements OnInit {
     this.router.navigate(['/home']);
   }
 
+  get feedbackCharCount(): number {
+    return this.feedbackControl.value?.trim().length ?? 0;
+  }
+
+  get hasMinimumFeedback(): boolean {
+    return this.feedbackCharCount >= 50;
+  }
+
   retakeTest(): void {
+    if (!this.hasMinimumFeedback) {
+      this.feedbackControl.markAsTouched();
+      return;
+    }
     // Navegar a la misma ruta base para limpiar el ID
     this.router.navigate(['/test'])
       .then(() => {

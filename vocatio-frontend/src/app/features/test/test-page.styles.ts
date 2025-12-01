@@ -210,6 +210,15 @@ export const testPageStyles = `
   color: #718096;
 }
 
+.feedback-block {
+  margin-top: 1.5rem;
+}
+
+.feedback-hint {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
 .field-error {
   color: #e53e3e;
 }
