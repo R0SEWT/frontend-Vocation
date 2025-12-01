@@ -63,10 +63,14 @@ const FALLBACK_QUESTIONS: TestQuestion[] = [
         </div>
       }
     
-      @if (loading) {
+      @if (loading && !showResults) {
         <div class="loading-section">
           <div class="loading-card">
+            <div class="loader-spinner" aria-hidden="true"></div>
             <p>{{ loadingMessage }}</p>
+            @if (loadingSubtitle) {
+              <p class="loader-subtitle">{{ loadingSubtitle }}</p>
+            }
           </div>
         </div>
       }
@@ -95,7 +99,7 @@ const FALLBACK_QUESTIONS: TestQuestion[] = [
                 <span>¿Quieres contarnos algo más sobre tus intereses?</span>
                 <textarea
                   rows="4"
-                  maxlength="400"
+                  maxlength="255"
                   [formControl]="opinionControl"
                   placeholder="Comparte detalles adicionales..."
                 ></textarea>
@@ -137,67 +141,77 @@ const FALLBACK_QUESTIONS: TestQuestion[] = [
         </div>
       }
     
-      @if (!loading && showResults) {
+      @if (showResults) {
         <section class="results-card">
-          <h2>{{ viewMode === 'result' ? 'Resultados Guardados' : '¡Test completado!' }}</h2>
+          <h2>{{ viewMode === 'result' ? 'Resultados Guardados' : (loading ? 'Analizando tus respuestas...' : '¡Test completado!') }}</h2>
           
-          <section class="insights-panel">
-            <h3>Perfil Vocacional</h3>
-            
-            @if (insights || submissionResult) {
-              <div class="insights-grid">
-                <div class="mbti-highlight">
-                  <div class="mbti-figure">
-                    <img
-                      class="mbti-avatar"
-                      [src]="getMbtiAvatar(insights?.mbtiProfile)"
-                      [alt]="'Arquetipo'"
-                      />
-                      <div class="mbti-badge">{{ insights?.mbtiProfile || 'PERFIL' }}</div>
-                    </div>
-                    <p class="mbti-caption">Arquetipo Vocacional</p>
-                  </div>
-                  
-                  <div class="insights-detail">
-                    <div class="insights-block">
-                      <h4>Áreas Principales</h4>
-                      <div class="qualities">
-                        @for (area of (submissionResult?.topAreas || insights?.suggestedCareers || []); track area) {
-                          <span class="quality-chip">{{ area }}</span>
-                        }
+          @if (loading) {
+            <div class="results-loading">
+              <div class="loader-spinner large" aria-hidden="true"></div>
+              <p>{{ loadingMessage }}</p>
+              @if (loadingSubtitle) {
+                <p class="loader-subtitle">{{ loadingSubtitle }}</p>
+              }
+            </div>
+          } @else {
+            <section class="insights-panel">
+              <h3>Perfil Vocacional</h3>
+              
+              @if (insights || submissionResult) {
+                <div class="insights-grid">
+                  <div class="mbti-highlight">
+                    <div class="mbti-figure">
+                      <img
+                        class="mbti-avatar"
+                        [src]="getMbtiAvatar(insights?.mbtiProfile)"
+                        [alt]="'Arquetipo'"
+                        />
+                        <div class="mbti-badge">{{ insights?.mbtiProfile || 'PERFIL' }}</div>
                       </div>
+                      <p class="mbti-caption">Arquetipo Vocacional</p>
                     </div>
-
-                    @if (insights?.qualities?.length) {
+                    
+                    <div class="insights-detail">
                       <div class="insights-block">
-                        <h4>Cualidades</h4>
+                        <h4>Áreas Principales</h4>
                         <div class="qualities">
-                          @for (quality of insights?.qualities; track quality) {
-                            <span class="quality-chip secondary">{{ quality }}</span>
+                          @for (area of (submissionResult?.topAreas || insights?.suggestedCareers || []); track area) {
+                            <span class="quality-chip">{{ area }}</span>
                           }
                         </div>
                       </div>
-                    }
 
-                    @if (insights?.profileSummary) {
-                      <div class="insights-block">
-                        <h4>Resumen</h4>
-                        <p class="profile-summary">{{ insights?.profileSummary }}</p>
-                      </div>
-                    }
+                      @if (insights?.qualities?.length) {
+                        <div class="insights-block">
+                          <h4>Cualidades</h4>
+                          <div class="qualities">
+                            @for (quality of insights?.qualities; track quality) {
+                              <span class="quality-chip secondary">{{ quality }}</span>
+                            }
+                          </div>
+                        </div>
+                      }
+
+                      @if (insights?.profileSummary) {
+                        <div class="insights-block">
+                          <h4>Resumen</h4>
+                          <p class="profile-summary">{{ insights?.profileSummary }}</p>
+                        </div>
+                      }
+                    </div>
                   </div>
-                </div>
-              } @else {
-                <p class="empty">No se pudieron cargar los detalles del resultado.</p>
-              }
+                } @else {
+                  <p class="empty">No se pudieron cargar los detalles del resultado.</p>
+                }
             </section>
 
             <div class="results-actions">
               <button class="primary-action" type="button" (click)="goToHome()">Ir al Inicio</button>
               <button class="secondary-action" type="button" (click)="retakeTest()">Realizar nuevo test</button>
             </div>
-          </section>
-        }
+          }
+        </section>
+      }
       </main>
     `,
   styles: [testPageStyles]
@@ -205,6 +219,7 @@ const FALLBACK_QUESTIONS: TestQuestion[] = [
 export class TestPageComponent implements OnInit {
   viewMode: 'test' | 'result' = 'test';
   loadingMessage = 'Cargando...';
+  loadingSubtitle = '';
   
   questions: TestQuestion[] = [];
   answersByQuestion: Record<string, string> = {};
@@ -284,11 +299,13 @@ export class TestPageComponent implements OnInit {
     }
     this.loading = true;
     this.loadingMessage = 'Recuperando resultados guardados...';
+    this.loadingSubtitle = 'Esto puede tardar hasta 4 segundos.';
     this.showResults = true;
 
     this.testService.fetchResult(id, token).pipe(
       finalize(() => {
         this.loading = false;
+        this.loadingSubtitle = '';
         this.cdr.detectChanges();
       })
     ).subscribe({
@@ -319,6 +336,7 @@ export class TestPageComponent implements OnInit {
 
     this.loading = true;
     this.loadingMessage = 'Preparando la evaluación...';
+    this.loadingSubtitle = 'Esto suele tomar entre 2 y 4 segundos.';
     this.questions = [];
     this.currentQuestionIndex = 0;
     this.answersByQuestion = {};
@@ -336,6 +354,7 @@ export class TestPageComponent implements OnInit {
     if (!this.useRemoteTestApi) {
       this.statusMessage = 'Modo demo: usamos preguntas locales.';
       this.loadFallbackQuestions();
+      this.loadingSubtitle = '';
       return;
     }
 
@@ -365,11 +384,13 @@ export class TestPageComponent implements OnInit {
     this.assessmentId = assessmentId;
     this.loading = true;
     this.loadingMessage = 'Cargando preguntas...';
+    this.loadingSubtitle = 'Estamos preparando tus preguntas. Esto tomará solo unos segundos.';
     
     this.testService
       .fetchQuestions(assessmentId, token)
       .pipe(finalize(() => { 
           this.loading = false; 
+          this.loadingSubtitle = '';
           this.cdr.detectChanges(); 
       }))
       .subscribe(
@@ -389,6 +410,7 @@ export class TestPageComponent implements OnInit {
     this.usingFallback = true;
     this.questions = [...FALLBACK_QUESTIONS];
     this.loading = false;
+    this.loadingSubtitle = '';
     this.cdr.detectChanges();
   }
 
@@ -430,6 +452,7 @@ export class TestPageComponent implements OnInit {
     if (this.usingFallback) {
         // Lógica local simple
         this.showResults = true;
+        this.loadingSubtitle = '';
         this.insights = { mbtiProfile: 'DEMO', suggestedCareers: ['Tecnología', 'Ciencias'], profileSummary: 'Modo local finalizado.' };
         return;
     }
@@ -439,6 +462,7 @@ export class TestPageComponent implements OnInit {
 
     this.loading = true;
     this.loadingMessage = 'Analizando tus respuestas con IA...';
+    this.loadingSubtitle = 'Este proceso puede tardar hasta 60 segundos. Gracias por tu paciencia.';
     this.showResults = true;
 
     const answersPayload = this.questions.map(q => ({
@@ -454,12 +478,14 @@ export class TestPageComponent implements OnInit {
         next: (response) => {
             this.insights = response;
             this.loading = false;
+            this.loadingSubtitle = '';
             this.cdr.detectChanges();
             // Opcional: Llamar a submitTest del backend para cerrar el intento
         },
         error: (err) => {
             this.loading = false;
             this.statusMessage = 'Error generando insights.';
+            this.loadingSubtitle = '';
             this.cdr.detectChanges();
         }
     });
@@ -474,7 +500,7 @@ export class TestPageComponent implements OnInit {
   }
 
   get hasRequiredOpinion(): boolean {
-    return this.opinionCharCount >= 50;
+    return this.opinionCharCount >= 50 && this.opinionCharCount <= 400;
   }
 
   get isLastQuestion(): boolean {

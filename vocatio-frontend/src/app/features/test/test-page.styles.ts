@@ -89,16 +89,45 @@ export const testPageStyles = `
 .loading-section {
   display: flex;
   justify-content: center;
+  align-items: center;
+  min-height: 260px;
 }
 
 .loading-card {
-  padding: 1.5rem 2rem;
+  padding: 2rem 2.5rem;
   border-radius: 1rem;
   background: white;
   border: 1px solid var(--border-color);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
   color: var(--text-color);
   font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.loader-spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 4px solid rgba(79, 70, 229, 0.2);
+  border-top-color: var(--analyst-purple);
+  animation: spin 0.9s linear infinite;
+  margin-bottom: 0.5rem;
+}
+
+.loader-spinner.large {
+  width: 64px;
+  height: 64px;
+  border-width: 6px;
+}
+
+.loader-subtitle {
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 400;
 }
 
 .test-header {
@@ -210,6 +239,16 @@ export const testPageStyles = `
   color: #718096;
 }
 
+.results-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 0;
+  text-align: center;
+}
+
 .char-counter {
   font-weight: 600;
   margin-left: 0.25rem;
@@ -222,6 +261,12 @@ export const testPageStyles = `
 
 .field-error {
   color: #e53e3e;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .actions-section {
