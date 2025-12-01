@@ -96,22 +96,23 @@ const FALLBACK_QUESTIONS: TestQuestion[] = [
             </div>
             <div class="insight-notes">
               <label>
-                <span>¿Quieres contarnos algo más sobre tus intereses?</span>
+                <span>Enfoque del test</span> 
                 <textarea
                   rows="4"
                   maxlength="255"
                   [formControl]="opinionControl"
-                  placeholder="Comparte detalles adicionales..."
+                  placeholder="- ¿Alguna decision en la que el test te pueda asistir? 
+- ¿elegir un enfoque, carrera o especializacion?
+
+Tambien puedes compartir algo sobre ti"
                 ></textarea>
                 @if (isLastQuestion) {
                   <small class="field-hint">
-                    Antes de iniciar el test, cuéntanos brevemente:
-                    - ¿En qué etapa estás respecto a tu elección de carrera?
-                    - ¿Qué esperas que este test te ayude a aclarar?
-
-                    Tambien puedes compartir alguna duda o decision que no encaje con las alternativas cerradas.
+                    Antes de finalizar el test, cuéntanos brevemente:
+                    
+                    
                     <span class="char-counter" [class.invalid]="!hasRequiredOpinion">
-                      {{ opinionCharCount }}/50
+                      {{ opinionCharCount }}/50 *
                     </span>
                   </small>
                 }
