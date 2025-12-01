@@ -58,6 +58,7 @@ import { UserProfile } from '../../core/validators/models/profile.models';
             </header>
             
             <div class="profile-body">
+              <p><strong>Nombre:</strong> {{ profile.name || 'No definido' }}</p>
               <p><strong>Edad:</strong> {{ profile.age ?? '--' }} años</p>
               <p><strong>Grado:</strong> {{ getGradeLabel(profile.grade) || 'No definido' }}</p>
               <p><strong>Intereses:</strong> {{ profile.interests.length ? profile.interests.join(', ') : 'Sin intereses' }}</p>
@@ -83,6 +84,15 @@ import { UserProfile } from '../../core/validators/models/profile.models';
                     <button type="button" class="close-btn" (click)="cancelProfileConfig()" [disabled]="editStatus === 'saving'">✕</button>
                   </div>
                   
+                  <!-- CAMBIO: Campo para el nombre -->
+                  <label class="field">
+                    <span>Nombre completo</span>
+                    <input type="text" formControlName="fullName" placeholder="Tu nombre" />
+                    @if (profileConfigForm.controls['fullName'].touched && profileConfigForm.controls['fullName'].hasError('required')) {
+                      <small class="field-error">El nombre es obligatorio.</small>
+                    }
+                  </label>
+
                   <label class="field">
                     <span>Edad estimada</span>
                     <input type="number" formControlName="age" min="14" placeholder="Ej: 18" />
@@ -219,7 +229,6 @@ export class HomePageComponent implements OnInit {
 
   interestOptions: string[] = Object.keys(INTEREST_AREA_CATALOG);
 
-  // ACTUALIZADO: Lista completa de grados incluyendo hasta UNIVERSIDAD_6_MAS
   gradeOptions = [
     { value: 'SECUNDARIA_1', label: '1° de secundaria' },
     { value: 'SECUNDARIA_2', label: '2° de secundaria' },
@@ -248,6 +257,7 @@ export class HomePageComponent implements OnInit {
     private fb: FormBuilder
   ) {
     this.profileConfigForm = this.fb.group({
+      fullName: ['', Validators.required], // CAMBIO: Agregado campo para nombre
       age: [null, [Validators.required, Validators.min(14)]],
       grade: ['', Validators.required],
       interests: [[], Validators.required]
@@ -387,10 +397,9 @@ export class HomePageComponent implements OnInit {
       return;
     }
 
-    // Usamos getRawValue para asegurar que obtenemos el valor aunque estuviera deshabilitado
     const rawValue = this.profileConfigForm.getRawValue();
     
-    // Forzamos conversión de tipos para asegurar que el payload es exacto
+    const fullName = rawValue.fullName?.trim();
     const age = Number(rawValue.age); 
     const grade = (rawValue.grade ?? '').trim();
     const interests = rawValue.interests as string[] || [];
@@ -405,6 +414,7 @@ export class HomePageComponent implements OnInit {
     this.editFeedback = '';
     this.profileConfigForm.disable();
 
+    // 1. Actualizar datos vocacionales (Edad, Grado, Intereses)
     this.profileService
       .updateProfile({
         age,
@@ -413,39 +423,64 @@ export class HomePageComponent implements OnInit {
       })
       .subscribe({
         next: (response) => {
-          this.profile = response.profile;
-          
-          // Verificar si el backend realmente guardó el cambio comparando
-          if (this.profile.grade !== grade) {
-             console.warn('El backend devolvió un grado diferente al enviado:', this.profile.grade);
-             // Opcional: podrías mostrar un warning aquí si fuera crítico
-          }
-
-          this.editStatus = 'success';
-          this.editFeedback = '¡Perfil actualizado correctamente!';
-          this.syncProfileForm();
-          
-          const areaIds = extractAreaIds(this.profile.interests);
-          if (areaIds) {
-            this.recommendationMessage = 'Tus intereses ya alimentan recomendaciones específicas.';
-            this.fetchRecommendations(areaIds);
+          // Si la actualización vocacional fue exitosa, verificamos si hay que actualizar el nombre
+          // NOTA: El backend separa datos personales (PATCH) de vocacionales (PUT)
+          if (fullName && fullName !== this.profile?.name) {
+             this.updatePersonalData(fullName, response.profile);
           } else {
-            this.recommendationMessage = 'Actualiza tus intereses para afinar el mapa vocacional.';
+             this.finalizeUpdate(response.profile);
           }
-
-          setTimeout(() => {
-            this.editingProfile = false;
-            this.profileConfigForm.enable();
-            this.editStatus = 'idle';
-            this.editFeedback = '';
-          }, 1500);
         },
         error: (error: Error) => {
-          this.editStatus = 'error';
-          this.editFeedback = error.message || 'Error al guardar los cambios.';
-          this.profileConfigForm.enable();
+          this.handleUpdateError(error);
         }
       });
+  }
+
+  // CAMBIO: Método auxiliar para actualizar nombre
+  private updatePersonalData(newName: string, currentProfile: UserProfile): void {
+    this.profileService.patchPersonalData({ 
+      name: newName, 
+      preferences: currentProfile.preferences || {} 
+    }).subscribe({
+      next: (response) => {
+        this.finalizeUpdate(response.profile);
+      },
+      error: (error: Error) => {
+        // Si falla el nombre pero se guardó lo demás, mostramos warning
+        console.error('Error actualizando nombre:', error);
+        this.finalizeUpdate(currentProfile, 'Perfil actualizado, pero hubo un error al guardar el nombre.');
+      }
+    });
+  }
+
+  // CAMBIO: Método auxiliar para finalizar el proceso
+  private finalizeUpdate(profile: UserProfile, customMessage?: string): void {
+    this.profile = profile;
+    this.editStatus = 'success';
+    this.editFeedback = customMessage || '¡Perfil actualizado correctamente!';
+    this.syncProfileForm();
+    
+    const areaIds = extractAreaIds(this.profile.interests);
+    if (areaIds) {
+      this.recommendationMessage = 'Tus intereses ya alimentan recomendaciones específicas.';
+      this.fetchRecommendations(areaIds);
+    } else {
+      this.recommendationMessage = 'Actualiza tus intereses para afinar el mapa vocacional.';
+    }
+
+    setTimeout(() => {
+      this.editingProfile = false;
+      this.profileConfigForm.enable();
+      this.editStatus = 'idle';
+      this.editFeedback = '';
+    }, 1500);
+  }
+
+  private handleUpdateError(error: Error): void {
+    this.editStatus = 'error';
+    this.editFeedback = error.message || 'Error al guardar los cambios.';
+    this.profileConfigForm.enable();
   }
 
   deleteAccount(): void {
@@ -480,6 +515,7 @@ export class HomePageComponent implements OnInit {
 
   private syncProfileForm(): void {
     this.profileConfigForm.patchValue({
+      fullName: this.profile?.name ?? '', // CAMBIO: Sincronizar nombre
       age: this.profile?.age ?? null,
       grade: this.profile?.grade ?? '',
       interests: this.profile?.interests ?? []
