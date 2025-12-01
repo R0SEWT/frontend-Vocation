@@ -58,9 +58,23 @@ export const homePageStyles = `
 
   .hero-actions {
     display: flex;
+    flex-direction: column;
     gap: 1rem;
     justify-content: center;
+    align-items: center;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 1rem;
     flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .ghost-action {
+    margin-top: 1.5rem;
+    opacity: 0.8;
+    font-size: 0.9rem;
   }
 
   .hero-visual {

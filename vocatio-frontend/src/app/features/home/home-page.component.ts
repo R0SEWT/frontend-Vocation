@@ -21,17 +21,22 @@ import { UserProfile } from '../../core/validators/models/profile.models';
           <p class="eyebrow">Descubre tu camino</p>
           <h1>Explora tus resultados <span class="highlight">vocacionales</span></h1>
           <p class="hero-subtitle">
-            {{ profile?.email || 'Completa tu perfil' }} · {{ getGradeLabel(profile?.grade) || 'Sin grado definido' }}
+            {{ profile?.name || profile?.email || 'Completa tu perfil' }} · {{ getGradeLabel(profile?.grade) || 'Sin grado definido' }}
           </p>
+          
           <div class="hero-actions">
-            <button class="primary-action" (click)="takeVocationalTest()">Realizar test vocacional</button>
+            <!-- Grupo de acciones principales -->
+            <div class="button-group">
+              <button class="primary-action" (click)="takeVocationalTest()">Realizar test vocacional</button>
+              
+              @if (lastAssessmentId) {
+                <button class="secondary-action" (click)="viewLastResult()">Ver último resultado</button>
+              } @else {
+                <button class="secondary-action" (click)="refreshRecommendations()">Actualizar recomendaciones</button>
+              }
+            </div>
             
-            @if (lastAssessmentId) {
-              <button class="secondary-action" (click)="viewLastResult()">Ver último resultado</button>
-            } @else {
-              <button class="secondary-action" (click)="refreshRecommendations()">Actualizar recomendaciones</button>
-            }
-            
+            <!-- Acción secundaria separada visualmente -->
             <button class="secondary-action" (click)="logout()">Cerrar sesión</button>
           </div>
         </div>
@@ -84,7 +89,6 @@ import { UserProfile } from '../../core/validators/models/profile.models';
                     <button type="button" class="close-btn" (click)="cancelProfileConfig()" [disabled]="editStatus === 'saving'">✕</button>
                   </div>
                   
-                  <!-- CAMBIO: Campo para el nombre -->
                   <label class="field">
                     <span>Nombre completo</span>
                     <input type="text" formControlName="fullName" placeholder="Tu nombre" />
@@ -143,8 +147,8 @@ import { UserProfile } from '../../core/validators/models/profile.models';
                     <button type="button" class="secondary-action" (click)="cancelProfileConfig()" [disabled]="editStatus === 'saving'">
                       Cancelar
                     </button>
-                    
-                    <button class="primary-action" type="submit" 
+
+                    <button class="primary-action" type="submit"
                             [disabled]="profileConfigForm.invalid || editStatus === 'saving' || editStatus === 'success'">
                       @switch (editStatus) {
                         @case ('saving') { Guardando... }
@@ -257,7 +261,7 @@ export class HomePageComponent implements OnInit {
     private fb: FormBuilder
   ) {
     this.profileConfigForm = this.fb.group({
-      fullName: ['', Validators.required], // CAMBIO: Agregado campo para nombre
+      fullName: ['', Validators.required],
       age: [null, [Validators.required, Validators.min(14)]],
       grade: ['', Validators.required],
       interests: [[], Validators.required]
@@ -371,6 +375,11 @@ export class HomePageComponent implements OnInit {
     this.editingProfile = false;
   }
 
+  goToHome(): void {
+    this.editingProfile = false;
+    this.router.navigate(['/']);
+  }
+
   isInterestSelected(interest: string): boolean {
     const currentInterests = this.profileConfigForm.controls['interests'].value as string[] || [];
     return currentInterests.includes(interest);
@@ -414,7 +423,6 @@ export class HomePageComponent implements OnInit {
     this.editFeedback = '';
     this.profileConfigForm.disable();
 
-    // 1. Actualizar datos vocacionales (Edad, Grado, Intereses)
     this.profileService
       .updateProfile({
         age,
@@ -423,8 +431,6 @@ export class HomePageComponent implements OnInit {
       })
       .subscribe({
         next: (response) => {
-          // Si la actualización vocacional fue exitosa, verificamos si hay que actualizar el nombre
-          // NOTA: El backend separa datos personales (PATCH) de vocacionales (PUT)
           if (fullName && fullName !== this.profile?.name) {
              this.updatePersonalData(fullName, response.profile);
           } else {
@@ -437,7 +443,6 @@ export class HomePageComponent implements OnInit {
       });
   }
 
-  // CAMBIO: Método auxiliar para actualizar nombre
   private updatePersonalData(newName: string, currentProfile: UserProfile): void {
     this.profileService.patchPersonalData({ 
       name: newName, 
@@ -447,14 +452,12 @@ export class HomePageComponent implements OnInit {
         this.finalizeUpdate(response.profile);
       },
       error: (error: Error) => {
-        // Si falla el nombre pero se guardó lo demás, mostramos warning
         console.error('Error actualizando nombre:', error);
         this.finalizeUpdate(currentProfile, 'Perfil actualizado, pero hubo un error al guardar el nombre.');
       }
     });
   }
 
-  // CAMBIO: Método auxiliar para finalizar el proceso
   private finalizeUpdate(profile: UserProfile, customMessage?: string): void {
     this.profile = profile;
     this.editStatus = 'success';
@@ -515,7 +518,7 @@ export class HomePageComponent implements OnInit {
 
   private syncProfileForm(): void {
     this.profileConfigForm.patchValue({
-      fullName: this.profile?.name ?? '', // CAMBIO: Sincronizar nombre
+      fullName: this.profile?.name ?? '',
       age: this.profile?.age ?? null,
       grade: this.profile?.grade ?? '',
       interests: this.profile?.interests ?? []
