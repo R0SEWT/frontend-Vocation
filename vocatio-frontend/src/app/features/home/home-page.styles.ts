@@ -377,6 +377,7 @@ export const homePageStyles = `
 
   .field select {
     cursor: pointer;
+    min-width: 280px;
   }
 
   .field input:focus, .field select:focus, .field textarea:focus {

@@ -95,7 +95,7 @@ import { UserProfile } from '../../core/validators/models/profile.models';
                   <label class="field">
                     <span>Grado de estudio</span>
                     <select formControlName="grade">
-                      <option value="" disabled>Selecciona tu grado</option>
+                      <option value="" disabled>Selecciona tu último grado aprobado</option>
                       @for (option of gradeOptions; track option.value) {
                         <option [value]="option.value">{{ option.label }}</option>
                       }
@@ -219,19 +219,24 @@ export class HomePageComponent implements OnInit {
 
   interestOptions: string[] = Object.keys(INTEREST_AREA_CATALOG);
 
+  // ACTUALIZADO: Lista completa de grados incluyendo hasta UNIVERSIDAD_6_MAS
   gradeOptions = [
-    { value: 'secundaria_3', label: '3° de Secundaria' },
-    { value: 'secundaria_4', label: '4° de Secundaria' },
-    { value: 'secundaria_5', label: '5° de Secundaria' },
-    { value: 'superior_tecnica_1', label: 'Superior Técnica - 1° Año' },
-    { value: 'superior_tecnica_2', label: 'Superior Técnica - 2° Año' },
-    { value: 'superior_tecnica_3', label: 'Superior Técnica - 3° Año' },
-    { value: 'superior_universitaria_1', label: 'Universitaria - 1° Año' },
-    { value: 'superior_universitaria_2', label: 'Universitaria - 2° Año' },
-    { value: 'superior_universitaria_3', label: 'Universitaria - 3° Año' },
-    { value: 'superior_universitaria_4', label: 'Universitaria - 4° Año' },
-    { value: 'superior_universitaria_5', label: 'Universitaria - 5° Año' },
-    { value: 'egresado', label: 'Egresado' }
+    { value: 'SECUNDARIA_1', label: '1° de secundaria' },
+    { value: 'SECUNDARIA_2', label: '2° de secundaria' },
+    { value: 'SECUNDARIA_3', label: '3° de secundaria' },
+    { value: 'SECUNDARIA_4', label: '4° de secundaria' },
+    { value: 'SECUNDARIA_5', label: '5° de secundaria' },
+    { value: 'SUPERIOR_TECNICA_1', label: '1° ciclo de instituto técnico' },
+    { value: 'SUPERIOR_TECNICA_2', label: '2° ciclo de instituto técnico' },
+    { value: 'SUPERIOR_TECNICA_3', label: '3° ciclo de instituto técnico' },
+    { value: 'SUPERIOR_TECNICA_4', label: '4° ciclo de instituto técnico' },
+    { value: 'SUPERIOR_TECNICA_5_MAS', label: '5° ciclo o más de instituto técnico' },
+    { value: 'UNIVERSIDAD_1', label: '1° ciclo universitario' },
+    { value: 'UNIVERSIDAD_2', label: '2° ciclo universitario' },
+    { value: 'UNIVERSIDAD_3', label: '3° ciclo universitario' },
+    { value: 'UNIVERSIDAD_4', label: '4° ciclo universitario' },
+    { value: 'UNIVERSIDAD_5', label: '5° ciclo universitario' },
+    { value: 'UNIVERSIDAD_6_MAS', label: '6° ciclo o más universitario' }
   ];
 
   constructor(
