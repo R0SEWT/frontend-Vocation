@@ -209,7 +209,7 @@ export const homePageStyles = `
     border-radius: 50%;
     transition: background 0.2s;
   }
-  .icon-btn:hover { background: #f1f5f9; color: #ef4444; }
+  .icon-btn:hover { background: #f1f5f9; }
 
   .profile-body {
     margin-bottom: 2rem;

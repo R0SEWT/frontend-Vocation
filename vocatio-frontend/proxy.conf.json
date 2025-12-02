@@ -1,14 +1,4 @@
 {
-  "/auth": {
-    "target": "https://vocatio.onrender.com/",
-    "secure": false,
-    "changeOrigin": true
-  },
-  "/users": {
-    "target": "https://vocatio.onrender.com/",
-    "secure": false,
-    "changeOrigin": true
-  },
   "/api": {
     "target": "https://vocatio.onrender.com/",
     "secure": false,
