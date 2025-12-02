@@ -15,6 +15,43 @@ export const homePageStyles = `
     gap: 4rem;
   }
 
+  .home-header {
+    background: white;
+    border-radius: 1.5rem;
+    padding: 1.5rem 2rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .home-header h2 {
+    margin: 0;
+    color: var(--text-color);
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .header-message {
+    margin: 0;
+    color: #475569;
+    font-size: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .home-header {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+    }
+
+    .header-message {
+      max-width: 380px;
+      text-align: right;
+    }
+  }
+
   /* --- HERO SECTION --- */
   .hero-section {
     display: grid;

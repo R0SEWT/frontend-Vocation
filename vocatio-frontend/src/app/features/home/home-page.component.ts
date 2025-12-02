@@ -17,6 +17,16 @@ import { UserProfile } from '../../core/validators/models/profile.models';
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <main class="home-shell">
+      <header class="home-header">
+        <div class="header-info">
+          <p class="eyebrow">Vocatio</p>
+          <h2>Panel principal</h2>
+        </div>
+        <p class="header-message">
+          Sigue tus resultados y recomendaciones vocacionales desde un solo lugar.
+        </p>
+      </header>
+
       <section class="hero-section" id="hero-section">
         <div class="hero-content">
           <p class="eyebrow">Descubre tu camino</p>
