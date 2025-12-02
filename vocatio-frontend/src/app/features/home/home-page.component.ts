@@ -41,175 +41,77 @@ import { UserProfile } from '../../core/validators/models/profile.models';
         </div>
       </section>
 
-      @if (profile) {
-        <section class="dashboard-grid">
-          <article class="profile-card" id="profile-card">
-            <header class="card-header">
-              <div>
-                <p class="eyebrow">Tu Perfil</p>
-                <h3>{{ profile.name || 'Nombre no definido' }}</h3>
+      <!-- Dashboard estilo tarjetas como el ejemplo -->
+      <section class="recommended-tiles">
+        <header class="section-header">
+          <h2>Recomendaciones</h2>
+        </header>
+        <div class="resource-grid">
+          @for (resource of resources.slice(0, 2); track resource.id) {
+            <article class="resource-card large">
+              <div class="resource-icon">Recurso</div>
+              <div class="resource-info">
+                <h4>{{ resource.title }}</h4>
+                <p>{{ resource.description || 'Material sugerido' }}</p>
+                <button class="secondary-action small" type="button">Detalles</button>
               </div>
-              <div class="card-actions-inline">
-                <button class="icon-btn" (click)="logout()" title="Cerrar sesión" aria-label="Cerrar sesión">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M12 2v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M7 6a7 7 0 1010 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                  </svg>
-                </button>
-              </div>
-            </header>
-            
-            <div class="profile-body">
-              <p><strong>Nombre:</strong> {{ profile.name || 'No definido' }}</p>
-              <p><strong>Edad:</strong> {{ profile.age ?? '--' }} años</p>
-              <p><strong>Grado:</strong> {{ getGradeLabel(profile.grade) || 'No definido' }}</p>
-              <p><strong>Intereses:</strong> {{ profile.interests.length ? profile.interests.join(', ') : 'Sin intereses' }}</p>
-              
-              <!-- Feedback global -->
-              @if (profileFeedback && !editingProfile) {
-                <p class="feedback-msg">{{ profileFeedback }}</p>
-              }
-            </div>
-
-            <div class="card-actions">
-              <button class="primary-action small" (click)="openProfileConfig()">Editar Perfil</button>
-              <button class="text-action danger" (click)="deleteAccount()" [disabled]="deletingAccount">
-                {{ deletingAccount ? 'Eliminando...' : 'Eliminar cuenta' }}
-              </button>
-            </div>
-
-            @if (editingProfile) {
-              <div class="edit-overlay">
-                <form [formGroup]="profileConfigForm" (ngSubmit)="submitProfileConfig()" class="edit-form">
-                  <div class="form-header">
-                    <h4>Actualiza tu perfil</h4>
-                    <button type="button" class="close-btn" (click)="cancelProfileConfig()" [disabled]="editStatus === 'saving'">Cerrar</button>
-                  </div>
-                  
-                  <label class="field">
-                    <span>Nombre completo</span>
-                    <input type="text" formControlName="fullName" placeholder="Tu nombre" />
-                    @if (profileConfigForm.controls['fullName'].touched && profileConfigForm.controls['fullName'].hasError('required')) {
-                      <small class="field-error">El nombre es obligatorio.</small>
-                    }
-                  </label>
-
-                  <label class="field">
-                    <span>Edad estimada</span>
-                    <input type="number" formControlName="age" min="14" placeholder="Ej: 18" />
-                    @if (profileConfigForm.controls['age'].touched && profileConfigForm.controls['age'].hasError('required')) {
-                      <small class="field-error">La edad es obligatoria.</small>
-                    }
-                  </label>
-
-                  <!-- Selector de Grado -->
-                  <label class="field">
-                    <span>Grado de estudio</span>
-                    <select formControlName="grade">
-                      <option value="" disabled>Selecciona tu último grado aprobado</option>
-                      @for (option of gradeOptions; track option.value) {
-                        <option [value]="option.value">{{ option.label }}</option>
-                      }
-                    </select>
-                    @if (profileConfigForm.controls['grade'].touched && profileConfigForm.controls['grade'].hasError('required')) {
-                      <small class="field-error">Selecciona un grado.</small>
-                    }
-                  </label>
-
-                  <!-- Lista de Intereses -->
-                  <div class="field">
-                    <span>Intereses</span>
-                    <div class="interests-container">
-                      @for (interest of interestOptions; track interest) {
-                        <label class="checkbox-option">
-                          <input type="checkbox" 
-                                 [checked]="isInterestSelected(interest)" 
-                                 (change)="toggleInterest(interest, $event)">
-                          {{ interest }}
-                        </label>
-                      }
-                    </div>
-                    @if (profileConfigForm.controls['interests'].touched && profileConfigForm.controls['interests'].invalid) {
-                      <small class="field-error">Selecciona al menos un interés.</small>
-                    }
-                  </div>
-
-                  @if (editFeedback) {
-                    <div class="modal-feedback" [class.error]="editStatus === 'error'" [class.success]="editStatus === 'success'">
-                      {{ editFeedback }}
-                    </div>
-                  }
-
-                  <div class="form-actions">
-                    <button type="button" class="secondary-action" (click)="cancelProfileConfig()" [disabled]="editStatus === 'saving'">
-                      Cancelar
-                    </button>
-
-                    <button class="primary-action" type="submit"
-                            [disabled]="profileConfigForm.invalid || editStatus === 'saving' || editStatus === 'success'">
-                      @switch (editStatus) {
-                        @case ('saving') { Guardando... }
-                        @case ('success') { ¡Guardado! }
-                        @default { Guardar }
-                      }
-                    </button>
-                  </div>
-                </form>
-              </div>
-            }
-          </article>
-
-          <article class="status-card">
-            <p class="eyebrow">Estado Actual</p>
-            <div class="status-content">
-              <div class="status-item">
-                <span class="status-value">{{ profile.interests.length }}</span>
-                <span class="status-label">Intereses detectados</span>
-              </div>
-              <div class="status-message">
-                <p>{{ recommendationMessage }}</p>
-              </div>
-            </div>
-          </article>
-        </section>
-      }
-
-      @if (showHistory) {
-        <section class="history-section" data-history-section>
-          <header class="section-header">
-            <h2>Intentos anteriores ({{ completedAttempts.length }})</h2>
-            <p class="subtitle">Selecciona un resultado para ver o eliminar.</p>
-          </header>
-
-          @if (!completedAttempts.length) {
-            <p class="feedback">sin intentos, realice uno nuevo</p>
-          } @else {
-            <div class="history-list">
-              @for (attempt of paginatedAttempts; track attempt.id) {
-                <div class="history-item">
-                  <div class="history-info">
-                    <span class="history-id">#{{ attempt.id }}</span>
-                    <span class="history-date">{{ formatDate(attempt.completedAt) }}</span>
-                  </div>
-                  <div class="history-actions">
-                    <button class="secondary-action small" (click)="openResult(attempt.id)">Ver</button>
-                    <button class="secondary-action danger small" [disabled]="deletingIds[attempt.id]" (click)="deleteAttempt(attempt.id)">
-                      {{ deletingIds[attempt.id] ? 'Eliminando...' : 'Eliminar' }}
-                    </button>
-                  </div>
-                </div>
-              } @empty {
-                <div class="empty-state"><p>sin intentos, realice uno nuevo</p></div>
-              }
-            </div>
-            <div class="history-meta">Mostrando {{ pageStart + 1 }}–{{ pageEnd }} de {{ completedAttempts.length }}</div>
-            <div class="history-pagination">
-              <button class="secondary-action small" type="button" (click)="prevPage()" [disabled]="pageIndex === 0">Anterior</button>
-              <button class="secondary-action small" type="button" (click)="nextPage()" [disabled]="(pageIndex + 1) * pageSize >= completedAttempts.length">Siguiente</button>
+            </article>
+          } @empty {
+            <div class="empty-state">
+              <p>Aún no hay recomendaciones disponibles.</p>
             </div>
           }
-        </section>
-      }
+          <article class="resource-card placeholder" title="Agregar">
+            <div class="resource-icon">+</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="dashboard-grid quick-cards">
+        <article class="status-card streak-card">
+          <p class="eyebrow">Racha</p>
+          <div class="status-content">
+            <div class="status-item">
+              <span class="status-value">{{ streakDays }}</span>
+              <span class="status-label">días</span>
+            </div>
+            <div class="status-actions">
+              <button class="secondary-action small" type="button" (click)="viewAchievements()">Ver logros</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="profile-card mini">
+          <p class="eyebrow">Perfil</p>
+          <div class="profile-body">
+            <div class="avatar" style="width:64px;height:64px;border-radius:50%;background:#e5e7eb;margin:8px 0;"></div>
+            <p>{{ profile?.name || profile?.email || 'Sin nombre' }}</p>
+          </div>
+          <div class="card-actions">
+            <button class="secondary-action small" type="button" (click)="viewMaterials()">Ver materiales</button>
+          </div>
+        </article>
+
+        <article class="status-card tests-card">
+          <p class="eyebrow">Test realizados</p>
+          <div class="tests-body" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <div class="gauge" [ngStyle]="gaugeStyle">
+              <div class="gauge-center" [ngStyle]="gaugeCenterStyle">
+                <div class="gauge-value" style="font-size:28px;font-weight:600;">{{ testsCompleted }}</div>
+                <small>Objetivo: {{ testGoal }}</small>
+              </div>
+            </div>
+            <div class="tests-cta" style="min-width:160px;">
+              <p style="margin:0 0 8px 0;">Iniciar nuevo test</p>
+              <button class="primary-action small" type="button" (click)="takeVocationalTest()">Iniciar</button>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      
+
+      <!-- Historial embebido removido: usar página dedicada /history -->
 
       <section class="recommendations-section">
         <header class="section-header">
@@ -256,11 +158,10 @@ export class HomePageComponent implements OnInit {
   statusMessage = '';
   recommendationMessage = 'Actualiza tus intereses para afinar el mapa vocacional.';
   loadingResources = false;
-  showHistory = false;
   completedAttempts: any[] = [];
-  deletingIds: Record<string, boolean> = {};
-  pageIndex = 0;
-  readonly pageSize = 5;
+  // Historial embebido eliminado; usar página dedicada /history
+  readonly testGoal = 30;
+  streakDays = 0;
   heroCards = [
     { label: 'INTJ', class: 'analyst' },
     { label: 'ENFP', class: 'diplomat' },
@@ -287,7 +188,8 @@ export class HomePageComponent implements OnInit {
     if (!this.viewingProfile) {
       return [
         { label: 'Realizar test vocacional', class: 'primary-action', onClick: () => this.takeVocationalTest() },
-        { label: 'Mi perfil', class: 'secondary-action', onClick: () => this.viewProfile() }
+        { label: 'Mi perfil', class: 'secondary-action', onClick: () => this.goToProfile() },
+        { label: 'Historial', class: 'secondary-action', onClick: () => this.openHistory() }
       ];
     }
     return [
@@ -295,8 +197,34 @@ export class HomePageComponent implements OnInit {
       { label: 'Volver a inicio', class: 'secondary-action', onClick: () => this.goToHome() }
     ];
   }
-  get pageStart(): number { return this.pageIndex * this.pageSize; }
-  get pageEnd(): number { return Math.min(this.pageStart + this.pageSize, this.completedAttempts.length); }
+  // Paginación local del historial eliminada
+  get testsCompleted(): number { return this.completedAttempts.length; }
+  get gaugePercent(): number {
+    if (this.testGoal <= 0) return 0;
+    return Math.max(0, Math.min(100, Math.round((this.testsCompleted / this.testGoal) * 100)));
+  }
+  get gaugeStyle(): Record<string, string> {
+    const angle = Math.round(360 * this.gaugePercent / 100);
+    return {
+      width: '160px',
+      height: '160px',
+      borderRadius: '50%',
+      background: `conic-gradient(#2563eb ${angle}deg, #e5e7eb 0)`,
+      display: 'grid',
+      placeItems: 'center'
+    };
+  }
+  get gaugeCenterStyle(): Record<string, string> {
+    return {
+      width: '120px',
+      height: '120px',
+      borderRadius: '50%',
+      background: '#fff',
+      display: 'grid',
+      placeItems: 'center',
+      textAlign: 'center'
+    };
+  }
 
   interestOptions: string[] = Object.keys(INTEREST_AREA_CATALOG);
 
@@ -350,27 +278,11 @@ export class HomePageComponent implements OnInit {
 
   getGradeLabel(value?: string): string {
     if (!value) return '';
-    const option = this.gradeOptions.find(o => o.value === value);
+    const option = this.gradeOptions.find((o: { value: string; label: string }) => o.value === value);
     return option ? option.label : value;
   }
 
-  get paginatedAttempts(): any[] {
-    const start = this.pageIndex * this.pageSize;
-    const end = start + this.pageSize;
-    return this.completedAttempts.slice(start, end);
-  }
-
-  nextPage(): void {
-    if ((this.pageIndex + 1) * this.pageSize < this.completedAttempts.length) {
-      this.pageIndex++;
-    }
-  }
-
-  prevPage(): void {
-    if (this.pageIndex > 0) {
-      this.pageIndex--;
-    }
-  }
+  // Métodos de paginación del historial eliminados
 
   private checkAssessments(): void {
     const token = this.session.getAccessToken();
@@ -401,9 +313,9 @@ export class HomePageComponent implements OnInit {
             // Algunos backends no exponen completedAt en el resumen; usar fallback si no está
             completedAt: (a as any).completedAt ?? (a as any).updatedAt ?? undefined 
           }));
-          // Reiniciar paginación al actualizar el listado
-          this.pageIndex = 0;
+          // Historial embebido eliminado; no hay paginación local que reiniciar
           console.log('lastAssessmentId asignado:', this.lastAssessmentId);
+          this.computeStreakFromAttempts();
           // Limpiar cualquier mensaje anterior si hay intentos
           if (this.statusMessage?.includes('No hay intentos')) {
             this.statusMessage = '';
@@ -421,12 +333,33 @@ export class HomePageComponent implements OnInit {
           // Asegurar que el botón muestre "Actualizar recomendaciones" y no "Ver último resultado"
           this.lastAssessmentId = undefined;
           this.completedAttempts = [];
+          this.streakDays = 0;
           // Mensaje claro para el usuario cuando no hay intentos
           this.statusMessage = 'sin intentos, realice uno nuevo';
         }
       },
       error: (err) => console.error('Error verificando historial', err)
     });
+  }
+
+  private computeStreakFromAttempts(): void {
+    try {
+      const dateKeys = new Set(
+        this.completedAttempts
+          .map(a => a.completedAt ? new Date(a.completedAt).toISOString().slice(0, 10) : undefined)
+          .filter((d): d is string => !!d)
+      );
+      let streak = 0;
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      while (dateKeys.has(new Date(d).toISOString().slice(0, 10))) {
+        streak++;
+        d.setDate(d.getDate() - 1);
+      }
+      this.streakDays = streak;
+    } catch {
+      this.streakDays = 0;
+    }
   }
 
   viewLastResult(): void {
@@ -444,59 +377,10 @@ export class HomePageComponent implements OnInit {
     }
   }
 
-  toggleHistory(): void {
-    this.showHistory = !this.showHistory;
-  }
-
   openHistory(): void {
-    this.showHistory = true;
-    // Intentar desplazar a la sección de historial si está presente
-    setTimeout(() => {
-      try {
-        const el = document.querySelector('[data-history-section]') as HTMLElement | null;
-        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } catch {}
-    }, 0);
+    this.router.navigate(['/history']);
   }
-
-  openResult(id: string): void {
-    this.router.navigate(['/test/results', id]);
-  }
-
-  deleteAttempt(id: string): void {
-    const confirmDelete = confirm('¿Eliminar este intento? Esta acción no se puede deshacer.');
-    if (!confirmDelete) return;
-    const token = this.session.getAccessToken();
-    if (!token) return;
-    this.deletingIds = { ...this.deletingIds, [id]: true };
-    this.testService.deleteAssessment(id, token).subscribe({
-      next: () => {
-        this.removeInsightsLocal(id);
-        this.completedAttempts = this.completedAttempts.filter(a => a.id !== id);
-        // Ajustar paginación si el índice actual queda fuera de rango
-        const total = this.completedAttempts.length;
-        const maxPage = Math.max(0, Math.ceil(total / this.pageSize) - 1);
-        if (this.pageIndex > maxPage) {
-          this.pageIndex = maxPage;
-        }
-        if (this.lastAssessmentId === id) {
-          // Recalcular el último
-          const nextLast = this.completedAttempts[0]?.id;
-          this.lastAssessmentId = nextLast;
-        }
-        if (!this.completedAttempts.length) {
-          this.statusMessage = 'sin intentos, realice uno nuevo';
-        }
-      },
-      error: (err) => {
-        console.error('Error eliminando intento', err);
-      },
-      complete: () => {
-        const { [id]: _, ...rest } = this.deletingIds;
-        this.deletingIds = rest;
-      }
-    });
-  }
+  // Acciones de ver/eliminar intento movidas a la página /history
 
   private removeInsightsLocal(assessmentId: string): void {
     try {
@@ -562,6 +446,14 @@ export class HomePageComponent implements OnInit {
     this.router.navigate(['/test']);
   }
 
+  viewAchievements(): void {
+    this.router.navigate(['/achievements']);
+  }
+
+  viewMaterials(): void {
+    this.router.navigate(['/materials']);
+  }
+
   logout(): void {
     this.session.clearTokens();
     this.router.navigate(['/auth/login']);
@@ -596,6 +488,10 @@ export class HomePageComponent implements OnInit {
       const el = document.getElementById('profile-card');
       el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch {}
+  }
+
+  goToProfile(): void {
+    this.router.navigate(['/profile']);
   }
 
   isInterestSelected(interest: string): boolean {
