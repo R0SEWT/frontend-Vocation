@@ -267,7 +267,7 @@ export class TestPageComponent implements OnInit {
     estp: 'mbti-avatars/estp.webp',
     esfp: 'mbti-avatars/esfp.webp',
     hist: 'mbti-avatars/intp.webp',
-    default: 'mbti-avatars/intp.webp'
+    default: 'mbti-avatars/default.webp'
   };
 
   private justCompletedTest = false; // Flag para prevenir sobreescritura
