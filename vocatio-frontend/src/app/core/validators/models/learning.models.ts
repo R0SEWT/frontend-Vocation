@@ -36,8 +36,8 @@ export interface TestResult {
   id?: string;
   assessmentId?: string;
   userId?: string;
-  topAreas: string[];
-  suggestedCareers?: string[];
+  topAreas: string[] | Array<{id: number; name: string}>;
+  suggestedCareers?: string[] | Array<{id: number; name: string}>;
   chart?: unknown;
   completedAt?: string;
 }

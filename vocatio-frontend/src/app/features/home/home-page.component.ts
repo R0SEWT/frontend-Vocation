@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { LearningResource } from '../../core/validators/models/learning.models';
 import { ProfileService } from '../../core/services/profile.service';
 import { RecommendationService } from '../../core/services/recommendation.service';
@@ -13,53 +14,49 @@ import { UserProfile } from '../../core/validators/models/profile.models';
 @Component({
   selector: 'app-home-page',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   template: `
     <main class="home-shell">
-      <section class="hero-section">
+      <section class="hero-section" id="hero-section">
         <div class="hero-content">
           <p class="eyebrow">Descubre tu camino</p>
           <h1>Explora tus resultados <span class="highlight">vocacionales</span></h1>
           <p class="hero-subtitle">
-            {{ profile?.name || profile?.email || 'Completa tu perfil' }} · {{ getGradeLabel(profile?.grade) || 'Sin grado definido' }}
+            {{ greeting }}, {{ profile?.name || profile?.email || 'Completa tu perfil' }} · {{ getGradeLabel(profile?.grade) || 'Sin grado definido' }}
           </p>
           
           <div class="hero-actions">
-            <!-- Grupo de acciones principales -->
             <div class="button-group">
-              <button class="primary-action" (click)="takeVocationalTest()">Realizar test vocacional</button>
-              
-              @if (lastAssessmentId) {
-                <button class="secondary-action" (click)="viewLastResult()">Ver último resultado</button>
-              } @else {
-                <button class="secondary-action" (click)="refreshRecommendations()">Actualizar recomendaciones</button>
+              @for (action of heroActions; track action.label) {
+                <button [ngClass]="action.class" (click)="action.onClick()">{{ action.label }}</button>
               }
             </div>
-            
-            <!-- Acción secundaria separada visualmente -->
-            <button class="secondary-action" (click)="logout()">Cerrar sesión</button>
           </div>
         </div>
 
         <div class="hero-visual">
-          <div class="character-card analyst">INTJ</div>
-          <div class="character-card diplomat">ENFP</div>
-          <div class="character-card sentinel">ISTJ</div>
-          <div class="character-card explorer">ESTP</div>
+          @for (card of heroCards; track card.label) {
+            <div class="character-card" [ngClass]="card.class">{{ card.label }}</div>
+          }
         </div>
       </section>
 
       @if (profile) {
         <section class="dashboard-grid">
-          <article class="profile-card">
+          <article class="profile-card" id="profile-card">
             <header class="card-header">
               <div>
                 <p class="eyebrow">Tu Perfil</p>
                 <h3>{{ profile.name || 'Nombre no definido' }}</h3>
               </div>
-              <button class="icon-btn" (click)="logout()" title="Cerrar sesión">
-                ⏻
-              </button>
+              <div class="card-actions-inline">
+                <button class="icon-btn" (click)="logout()" title="Cerrar sesión" aria-label="Cerrar sesión">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 2v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M7 6a7 7 0 1010 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
             </header>
             
             <div class="profile-body">
@@ -86,7 +83,7 @@ import { UserProfile } from '../../core/validators/models/profile.models';
                 <form [formGroup]="profileConfigForm" (ngSubmit)="submitProfileConfig()" class="edit-form">
                   <div class="form-header">
                     <h4>Actualiza tu perfil</h4>
-                    <button type="button" class="close-btn" (click)="cancelProfileConfig()" [disabled]="editStatus === 'saving'">✕</button>
+                    <button type="button" class="close-btn" (click)="cancelProfileConfig()" [disabled]="editStatus === 'saving'">Cerrar</button>
                   </div>
                   
                   <label class="field">
@@ -177,6 +174,43 @@ import { UserProfile } from '../../core/validators/models/profile.models';
         </section>
       }
 
+      @if (showHistory) {
+        <section class="history-section" data-history-section>
+          <header class="section-header">
+            <h2>Intentos anteriores ({{ completedAttempts.length }})</h2>
+            <p class="subtitle">Selecciona un resultado para ver o eliminar.</p>
+          </header>
+
+          @if (!completedAttempts.length) {
+            <p class="feedback">sin intentos, realice uno nuevo</p>
+          } @else {
+            <div class="history-list">
+              @for (attempt of paginatedAttempts; track attempt.id) {
+                <div class="history-item">
+                  <div class="history-info">
+                    <span class="history-id">#{{ attempt.id }}</span>
+                    <span class="history-date">{{ formatDate(attempt.completedAt) }}</span>
+                  </div>
+                  <div class="history-actions">
+                    <button class="secondary-action small" (click)="openResult(attempt.id)">Ver</button>
+                    <button class="secondary-action danger small" [disabled]="deletingIds[attempt.id]" (click)="deleteAttempt(attempt.id)">
+                      {{ deletingIds[attempt.id] ? 'Eliminando...' : 'Eliminar' }}
+                    </button>
+                  </div>
+                </div>
+              } @empty {
+                <div class="empty-state"><p>sin intentos, realice uno nuevo</p></div>
+              }
+            </div>
+            <div class="history-meta">Mostrando {{ pageStart + 1 }}–{{ pageEnd }} de {{ completedAttempts.length }}</div>
+            <div class="history-pagination">
+              <button class="secondary-action small" type="button" (click)="prevPage()" [disabled]="pageIndex === 0">Anterior</button>
+              <button class="secondary-action small" type="button" (click)="nextPage()" [disabled]="(pageIndex + 1) * pageSize >= completedAttempts.length">Siguiente</button>
+            </div>
+          }
+        </section>
+      }
+
       <section class="recommendations-section">
         <header class="section-header">
           <h2>Recursos Recomendados</h2>
@@ -194,7 +228,7 @@ import { UserProfile } from '../../core/validators/models/profile.models';
         <div class="resource-grid">
           @for (resource of resources; track resource.id) {
             <article class="resource-card">
-              <div class="resource-icon">📚</div>
+              <div class="resource-icon">Recurso</div>
               <div class="resource-info">
                 <h4>{{ resource.title }}</h4>
                 <p>{{ resource.description || 'Guía práctica para seguir avanzando.' }}</p>
@@ -222,6 +256,17 @@ export class HomePageComponent implements OnInit {
   statusMessage = '';
   recommendationMessage = 'Actualiza tus intereses para afinar el mapa vocacional.';
   loadingResources = false;
+  showHistory = false;
+  completedAttempts: any[] = [];
+  deletingIds: Record<string, boolean> = {};
+  pageIndex = 0;
+  readonly pageSize = 5;
+  heroCards = [
+    { label: 'INTJ', class: 'analyst' },
+    { label: 'ENFP', class: 'diplomat' },
+    { label: 'ISTJ', class: 'sentinel' },
+    { label: 'ESTP', class: 'explorer' }
+  ];
   
   profileConfigForm: FormGroup;
   editingProfile = false;
@@ -230,6 +275,28 @@ export class HomePageComponent implements OnInit {
   editFeedback = '';
   deletingAccount = false;
   lastAssessmentId?: string;
+  viewingProfile = false; // Declare the viewingProfile boolean
+  get hasCompletedAttempts(): boolean { return this.completedAttempts.length > 0; }
+  get greeting(): string {
+    const h = new Date().getHours();
+    if (h < 12) return 'Buenos días';
+    if (h < 19) return 'Buenas tardes';
+    return 'Buenas noches';
+  }
+  get heroActions(): Array<{ label: string; class: string; onClick: () => void }> {
+    if (!this.viewingProfile) {
+      return [
+        { label: 'Realizar test vocacional', class: 'primary-action', onClick: () => this.takeVocationalTest() },
+        { label: 'Mi perfil', class: 'secondary-action', onClick: () => this.viewProfile() }
+      ];
+    }
+    return [
+      { label: 'Ver últimos intentos', class: 'secondary-action', onClick: () => this.openHistory() },
+      { label: 'Volver a inicio', class: 'secondary-action', onClick: () => this.goToHome() }
+    ];
+  }
+  get pageStart(): number { return this.pageIndex * this.pageSize; }
+  get pageEnd(): number { return Math.min(this.pageStart + this.pageSize, this.completedAttempts.length); }
 
   interestOptions: string[] = Object.keys(INTEREST_AREA_CATALOG);
 
@@ -258,6 +325,7 @@ export class HomePageComponent implements OnInit {
     private session: SessionService,
     private testService: TestService,
     private router: Router,
+    private route: ActivatedRoute,
     private fb: FormBuilder
   ) {
     this.profileConfigForm = this.fb.group({
@@ -271,6 +339,13 @@ export class HomePageComponent implements OnInit {
   ngOnInit(): void {
     this.loadProfile();
     this.checkAssessments();
+    // Reaccionar a solicitudes de refresco vía query params
+    this.route.queryParamMap.subscribe(params => {
+      if (params.has('refresh')) {
+        console.log('Refrescando historial por query param refresh');
+        this.checkAssessments();
+      }
+    });
   }
 
   getGradeLabel(value?: string): string {
@@ -279,15 +354,75 @@ export class HomePageComponent implements OnInit {
     return option ? option.label : value;
   }
 
+  get paginatedAttempts(): any[] {
+    const start = this.pageIndex * this.pageSize;
+    const end = start + this.pageSize;
+    return this.completedAttempts.slice(start, end);
+  }
+
+  nextPage(): void {
+    if ((this.pageIndex + 1) * this.pageSize < this.completedAttempts.length) {
+      this.pageIndex++;
+    }
+  }
+
+  prevPage(): void {
+    if (this.pageIndex > 0) {
+      this.pageIndex--;
+    }
+  }
+
   private checkAssessments(): void {
     const token = this.session.getAccessToken();
     if (!token) return;
 
     this.testService.listAssessments(token).subscribe({
       next: (assessments) => {
+        console.log('Todos los assessments:', assessments);
+        console.log('Total de assessments recibidos:', assessments.length);
+        
         const completed = assessments.filter(a => a.status === 'COMPLETED');
+        console.log('Assessments completados:', completed);
+        console.log('Total completados:', completed.length);
+        
         if (completed.length > 0) {
-          this.lastAssessmentId = completed[completed.length - 1].id;
+          // Mostrar IDs ANTES de ordenar
+          console.log('IDs de completados (antes de ordenar):', completed.map(a => a.id));
+          
+          // Ordenar por ID descendente para obtener el más reciente
+          const sorted = completed.sort((a, b) => Number(b.id) - Number(a.id));
+          
+          console.log('IDs de completados (después de ordenar):', sorted.map(a => a.id));
+          console.log('El primero (más reciente) es:', sorted[0].id);
+          
+          this.lastAssessmentId = sorted[0].id;
+          this.completedAttempts = sorted.map(a => ({ 
+            id: a.id, 
+            // Algunos backends no exponen completedAt en el resumen; usar fallback si no está
+            completedAt: (a as any).completedAt ?? (a as any).updatedAt ?? undefined 
+          }));
+          // Reiniciar paginación al actualizar el listado
+          this.pageIndex = 0;
+          console.log('lastAssessmentId asignado:', this.lastAssessmentId);
+          // Limpiar cualquier mensaje anterior si hay intentos
+          if (this.statusMessage?.includes('No hay intentos')) {
+            this.statusMessage = '';
+          }
+          // Re-chequear brevemente para capturar nuevos intentos recién persistidos
+          setTimeout(() => {
+            // Evitar llamar si ya tenemos un ID establecido
+            if (!this.lastAssessmentId) {
+              console.log('Re-chequeo rápido de historial');
+              this.checkAssessments();
+            }
+          }, 800);
+        } else {
+          console.log('No hay assessments completados');
+          // Asegurar que el botón muestre "Actualizar recomendaciones" y no "Ver último resultado"
+          this.lastAssessmentId = undefined;
+          this.completedAttempts = [];
+          // Mensaje claro para el usuario cuando no hay intentos
+          this.statusMessage = 'sin intentos, realice uno nuevo';
         }
       },
       error: (err) => console.error('Error verificando historial', err)
@@ -295,9 +430,79 @@ export class HomePageComponent implements OnInit {
   }
 
   viewLastResult(): void {
+    console.log('viewLastResult llamado. lastAssessmentId:', this.lastAssessmentId);
+    console.log('Tipo de lastAssessmentId:', typeof this.lastAssessmentId);
     if (this.lastAssessmentId) {
+      console.log('Navegando a /test/results/' + this.lastAssessmentId);
+      console.log('Array de navegación:', ['/test/results', this.lastAssessmentId]);
       this.router.navigate(['/test/results', this.lastAssessmentId]);
+    } else {
+      console.error('No hay lastAssessmentId disponible');
+      this.statusMessage = 'Aún cargando historial. Intenta nuevamente en unos segundos.';
+      // Lanzar una recarga de historial inmediata
+      this.checkAssessments();
     }
+  }
+
+  toggleHistory(): void {
+    this.showHistory = !this.showHistory;
+  }
+
+  openHistory(): void {
+    this.showHistory = true;
+    // Intentar desplazar a la sección de historial si está presente
+    setTimeout(() => {
+      try {
+        const el = document.querySelector('[data-history-section]') as HTMLElement | null;
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch {}
+    }, 0);
+  }
+
+  openResult(id: string): void {
+    this.router.navigate(['/test/results', id]);
+  }
+
+  deleteAttempt(id: string): void {
+    const confirmDelete = confirm('¿Eliminar este intento? Esta acción no se puede deshacer.');
+    if (!confirmDelete) return;
+    const token = this.session.getAccessToken();
+    if (!token) return;
+    this.deletingIds = { ...this.deletingIds, [id]: true };
+    this.testService.deleteAssessment(id, token).subscribe({
+      next: () => {
+        this.removeInsightsLocal(id);
+        this.completedAttempts = this.completedAttempts.filter(a => a.id !== id);
+        // Ajustar paginación si el índice actual queda fuera de rango
+        const total = this.completedAttempts.length;
+        const maxPage = Math.max(0, Math.ceil(total / this.pageSize) - 1);
+        if (this.pageIndex > maxPage) {
+          this.pageIndex = maxPage;
+        }
+        if (this.lastAssessmentId === id) {
+          // Recalcular el último
+          const nextLast = this.completedAttempts[0]?.id;
+          this.lastAssessmentId = nextLast;
+        }
+        if (!this.completedAttempts.length) {
+          this.statusMessage = 'sin intentos, realice uno nuevo';
+        }
+      },
+      error: (err) => {
+        console.error('Error eliminando intento', err);
+      },
+      complete: () => {
+        const { [id]: _, ...rest } = this.deletingIds;
+        this.deletingIds = rest;
+      }
+    });
+  }
+
+  private removeInsightsLocal(assessmentId: string): void {
+    try {
+      const key = `vocatio:insights:${assessmentId}`;
+      localStorage.removeItem(key);
+    } catch {}
   }
 
   private loadProfile(): void {
@@ -377,7 +582,20 @@ export class HomePageComponent implements OnInit {
 
   goToHome(): void {
     this.editingProfile = false;
-    this.router.navigate(['/']);
+    this.viewingProfile = false;
+    try {
+      const el = document.getElementById('hero-section');
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch {}
+  }
+
+  viewProfile(): void {
+    this.editingProfile = false;
+    this.viewingProfile = true;
+    try {
+      const el = document.getElementById('profile-card');
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch {}
   }
 
   isInterestSelected(interest: string): boolean {
@@ -522,6 +740,16 @@ export class HomePageComponent implements OnInit {
       age: this.profile?.age ?? null,
       grade: this.profile?.grade ?? '',
       interests: this.profile?.interests ?? []
+    });
+  }
+
+  formatDate(dateString?: string): string {
+    if (!dateString) return 'Fecha no disponible';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
     });
   }
 }
