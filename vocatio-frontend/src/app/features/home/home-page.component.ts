@@ -83,43 +83,57 @@ import { UserProfile } from '../../core/validators/models/profile.models';
 
         <article class="profile-card mini">
           <p class="eyebrow">Perfil</p>
-          <div class="profile-body" style="display:flex; align-items:flex-start; gap:16px;">
-            <div class="avatar" style="width:64px;height:64px;border-radius:50%;background:#e5e7eb; flex:0 0 auto;"></div>
-            <div style="flex:1; display:flex; flex-direction:column; gap:12px; min-width:0;">
+          <div class="profile-body profile-header">
+            <div class="avatar" style="width:64px;height:64px;border-radius:50%;background:#e5e7eb;"></div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
               <div>
                 <div style="font-weight:600;">{{ profile?.name || profile?.email || 'Sin nombre' }}</div>
                 <small>{{ getGradeLabel(profile?.grade) || 'Sin grado definido' }}</small>
               </div>
 
-              <div style="display:flex; flex-wrap:wrap; gap:12px;">
-                <article class="status-card mini" style="flex:1 1 180px; min-width:160px;">
+              <div class="summary-grid">
+                <article class="status-card mini" style="display:flex; flex-direction:column; justify-content:center; min-height:120px;">
                   <p class="eyebrow">Último intento</p>
                   <div>
                     <div style="font-weight:600;">{{ lastAttemptLabel }}</div>
                     <small>{{ lastAttemptDateLabel }}</small>
                   </div>
                 </article>
-                <article class="status-card mini" style="flex:1 1 180px; min-width:160px;">
+                <article class="status-card mini" style="display:flex; flex-direction:column; justify-content:center; min-height:120px;">
                   <p class="eyebrow">Favoritos</p>
                   <div>
                     <div style="font-weight:600;">{{ favoritesCount }}</div>
                     <small>Carreras marcadas</small>
                   </div>
                 </article>
-                <article class="status-card mini" *ngIf="lastResult" style="flex:1 1 180px; min-width:160px;">
-                  <p class="eyebrow">Resultado</p>
-                  <div>
-                    <div style="font-weight:600;">{{ lastResult?.mbtiProfile || '—' }}</div>
-                    <small>Ver detalle</small>
-                  </div>
-                  <div class="card-actions" style="margin-top:8px;">
-                    <button class="secondary-action small" (click)="viewLastResult()">Abrir resultado</button>
-                  </div>
-                </article>
+                @if (lastResult) {
+                  <article class="status-card mini" style="display:flex; flex-direction:column; justify-content:space-between; min-height:120px;">
+                    <p class="eyebrow">Resultado</p>
+                    <div>
+                      <div style="font-weight:600;">{{ lastResult?.mbtiProfile || '—' }}</div>
+                      <small>Ver detalle</small>
+                    </div>
+                    <div class="card-actions" style="margin-top:8px;">
+                      <button class="secondary-action small" (click)="viewLastResult()">Abrir resultado</button>
+                    </div>
+                  </article>
+                } @else {
+                  <article class="status-card mini" style="display:flex; flex-direction:column; justify-content:space-between; min-height:120px;">
+                    <p class="eyebrow">Materiales</p>
+                    <div>
+                      <small>Explora materiales y/o realiza el test para sugerencias.</small>
+                    </div>
+                    <div class="card-actions" style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                      <button class="secondary-action small" type="button" (click)="viewMaterials()">Ver materiales</button>
+                      <button class="primary-action small" type="button" (click)="takeVocationalTest()">Realizar test</button>
+                    </div>
+                  </article>
+                }
               </div>
-            </div>
-            <div style="flex:0 0 auto; align-self:center;">
-              <button class="secondary-action small" type="button" (click)="viewMaterials()">Ver materiales</button>
+              <div class="profile-actions">
+                <button class="secondary-action small" type="button" (click)="viewCareers()">Ver carreras</button>
+                <button class="secondary-action small" type="button" (click)="viewMaterials()">Ver materiales</button>
+              </div>
             </div>
           </div>
         </article>
@@ -588,6 +602,10 @@ export class HomePageComponent implements OnInit {
 
   viewMaterials(): void {
     this.router.navigate(['/materials']);
+  }
+
+  viewCareers(): void {
+    this.router.navigate(['/careers']);
   }
 
   logout(): void {

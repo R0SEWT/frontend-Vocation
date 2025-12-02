@@ -146,6 +146,7 @@ export class CareersPageComponent implements OnInit {
   constructor(private router: Router, private profileService: ProfileService) {}
 
   ngOnInit(): void {
+    this.loadFavorites();
     this.profileService.fetchProfile().subscribe({
       next: (p) => {
         this.profile = p;

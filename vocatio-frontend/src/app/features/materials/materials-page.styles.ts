@@ -1,19 +1,32 @@
 export const materialsPageStyles = `
+/* Layout */
 .main-shell { max-width: 960px; margin: 0 auto; padding: 24px; }
 .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+
+/* Typography */
 .eyebrow { font-size: 12px; color:#6b7280; letter-spacing:.04em; text-transform:uppercase; margin:0; }
+
+/* Cards */
 .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,.04); padding:16px; }
 .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+
+/* Actions */
 .primary-action { background:#10b981; color:white; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; }
 .secondary-action { background:transparent; color:#111827; border:1px solid #d1d5db; border-radius:8px; padding:8px 12px; cursor:pointer; }
+
+/* Grid */
 .grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; }
+
+/* Tiles */
 .tile { border:1px solid #e5e7eb; border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:8px; }
 .tile h4 { margin:0; font-size:16px; }
 .tile p { margin:0; color:#4b5563; }
+
+/* Responsive */
 @media (max-width: 900px) {
-	.grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 520px) {
-	.grid { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: 1fr; }
 }
 `;
