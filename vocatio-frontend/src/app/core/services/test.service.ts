@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, map, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { TEST_ENDPOINTS } from '../constants/api.constants';
-import { AssessmentAnswer, TestQuestion, TestSubmission, TestResult } from '../validators/models/learning.models';
+import { AssessmentAnswer, TestQuestion, TestSubmission, TestResult, VocationalInsights } from '../validators/models/learning.models';
 
 interface ApiAssessmentOption {
   id: string;
@@ -119,5 +119,45 @@ export class TestService {
   fetchResult(assessmentId: string, token: string): Observable<TestResult> {
     const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
     return this.http.get<TestResult>(TEST_ENDPOINTS.result(assessmentId), { headers });
+  }
+
+  // (Opcional) Persistir insights de IA en el backend para consultas históricas consistentes
+  saveInsights(assessmentId: string, token: string, insights: VocationalInsights): Observable<{ message?: string }> {
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+    // Enviar solo los campos relevantes
+    const payload = {
+      mbtiProfile: insights.mbtiProfile,
+      suggestedCareers: insights.suggestedCareers,
+      qualities: insights.qualities,
+      profileSummary: insights.profileSummary
+    };
+    return this.http.post<{ message?: string }>(TEST_ENDPOINTS.insights(assessmentId), payload, { headers }).pipe(
+      catchError((error) => {
+        console.warn('saveInsights failed (se ignora y se usa fallback local)', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Eliminar un assessment por su ID
+  deleteAssessment(assessmentId: string, token: string): Observable<{ message: string }> {
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+    return this.http.delete<{ message: string }>(TEST_ENDPOINTS.delete(assessmentId), { headers }).pipe(
+      catchError((error) => {
+        console.error('deleteAssessment failed', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // (Opcional) Recuperar insights de IA desde el backend, si existen
+  fetchInsights(assessmentId: string, token: string): Observable<VocationalInsights> {
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+    return this.http.get<VocationalInsights>(TEST_ENDPOINTS.insights(assessmentId), { headers }).pipe(
+      catchError((error) => {
+        console.warn('fetchInsights failed (se ignorará y se usará fallback):', error);
+        return throwError(() => error);
+      })
+    );
   }
 }

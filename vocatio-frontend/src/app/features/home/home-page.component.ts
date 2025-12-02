@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { LearningResource } from '../../core/validators/models/learning.models';
 import { ProfileService } from '../../core/services/profile.service';
 import { RecommendationService } from '../../core/services/recommendation.service';
@@ -258,6 +258,7 @@ export class HomePageComponent implements OnInit {
     private session: SessionService,
     private testService: TestService,
     private router: Router,
+    private route: ActivatedRoute,
     private fb: FormBuilder
   ) {
     this.profileConfigForm = this.fb.group({
@@ -271,6 +272,13 @@ export class HomePageComponent implements OnInit {
   ngOnInit(): void {
     this.loadProfile();
     this.checkAssessments();
+    // Reaccionar a solicitudes de refresco vía query params
+    this.route.queryParamMap.subscribe(params => {
+      if (params.has('refresh')) {
+        console.log('🔄 Refrescando historial por query param refresh');
+        this.checkAssessments();
+      }
+    });
   }
 
   getGradeLabel(value?: string): string {
@@ -285,9 +293,43 @@ export class HomePageComponent implements OnInit {
 
     this.testService.listAssessments(token).subscribe({
       next: (assessments) => {
+        console.log('📋 Todos los assessments:', assessments);
+        console.log('📊 Total de assessments recibidos:', assessments.length);
+        
         const completed = assessments.filter(a => a.status === 'COMPLETED');
+        console.log('✅ Assessments completados:', completed);
+        console.log('📈 Total completados:', completed.length);
+        
         if (completed.length > 0) {
-          this.lastAssessmentId = completed[completed.length - 1].id;
+          // Mostrar IDs ANTES de ordenar
+          console.log('🔢 IDs de completados (antes de ordenar):', completed.map(a => a.id));
+          
+          // Ordenar por ID descendente para obtener el más reciente
+          const sorted = completed.sort((a, b) => Number(b.id) - Number(a.id));
+          
+          console.log('🔢 IDs de completados (después de ordenar):', sorted.map(a => a.id));
+          console.log('🏆 El primero (más reciente) es:', sorted[0].id);
+          
+          this.lastAssessmentId = sorted[0].id;
+          console.log('🆔 lastAssessmentId asignado:', this.lastAssessmentId);
+          // Limpiar cualquier mensaje anterior si hay intentos
+          if (this.statusMessage?.includes('No hay intentos')) {
+            this.statusMessage = '';
+          }
+          // Re-chequear brevemente para capturar nuevos intentos recién persistidos
+          setTimeout(() => {
+            // Evitar llamar si ya tenemos un ID establecido
+            if (!this.lastAssessmentId) {
+              console.log('⏱️ Re-chequeo rápido de historial');
+              this.checkAssessments();
+            }
+          }, 800);
+        } else {
+          console.log('⚠️ No hay assessments completados');
+          // Asegurar que el botón muestre "Actualizar recomendaciones" y no "Ver último resultado"
+          this.lastAssessmentId = undefined;
+          // Mensaje claro para el usuario cuando no hay intentos
+          this.statusMessage = 'sin intentos, realice uno nuevo';
         }
       },
       error: (err) => console.error('Error verificando historial', err)
@@ -295,8 +337,17 @@ export class HomePageComponent implements OnInit {
   }
 
   viewLastResult(): void {
+    console.log('🔍 viewLastResult llamado. lastAssessmentId:', this.lastAssessmentId);
+    console.log('🔍 Tipo de lastAssessmentId:', typeof this.lastAssessmentId);
     if (this.lastAssessmentId) {
+      console.log('📍 Navegando a /test/results/' + this.lastAssessmentId);
+      console.log('📍 Array de navegación:', ['/test/results', this.lastAssessmentId]);
       this.router.navigate(['/test/results', this.lastAssessmentId]);
+    } else {
+      console.error('❌ No hay lastAssessmentId disponible');
+      this.statusMessage = 'Aún cargando historial. Intenta nuevamente en unos segundos.';
+      // Lanzar una recarga de historial inmediata
+      this.checkAssessments();
     }
   }
 

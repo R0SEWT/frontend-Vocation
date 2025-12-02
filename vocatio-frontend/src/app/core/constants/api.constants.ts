@@ -16,6 +16,8 @@ export const TEST_ENDPOINTS = {
   questions: (assessmentId: string) => `${API_V1_BASE_URL}/assessments/${assessmentId}`,
   submit: (assessmentId: string) => `${API_V1_BASE_URL}/assessments/${assessmentId}/submit`,
   result: (assessmentId: string) => `${API_V1_BASE_URL}/assessments/${assessmentId}/result`,
+  insights: (assessmentId: string) => `${API_V1_BASE_URL}/assessments/${assessmentId}/insights`, // POST opcional para persistir insights de IA
+  delete: (assessmentId: string) => `${API_V1_BASE_URL}/assessments/${assessmentId}`, // DELETE: elimina un assessment
   recommendations: `${API_V1_BASE_URL}/recommendations`
 };
 
