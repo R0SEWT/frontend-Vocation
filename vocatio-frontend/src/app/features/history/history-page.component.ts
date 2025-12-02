@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { historyPageStyles } from './history-page.styles';
 import { uiStyles } from '../../shared/styles/ui.styles';
 import { TestService } from '../../core/services/test.service';
@@ -16,7 +16,7 @@ interface AttemptItem {
 @Component({
   selector: 'app-history-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   template: `
     <main class="main-shell">
       <header class="section-header">
@@ -25,7 +25,7 @@ interface AttemptItem {
           <h2>Intentos anteriores</h2>
         </div>
         <div>
-          <button class="secondary-action" (click)="goHome()">Volver a inicio</button>
+          <button class="secondary-action" [routerLink]="['/home']">Volver a inicio</button>
         </div>
       </header>
 
@@ -33,6 +33,11 @@ interface AttemptItem {
         <header class="card-header">
           <h3>Resumen</h3>
           <span class="badge">{{ attempts.length }} intentos</span>
+          <div style="display:flex; gap:8px; margin-left:auto;">
+            <button class="secondary-action danger" type="button" (click)="deleteAllAttempts()" [disabled]="deletingAll">
+              {{ deletingAll ? 'Eliminando todos...' : 'Eliminar todos los intentos anteriores' }}
+            </button>
+          </div>
         </header>
 
         <div style="display:grid; gap:8px; margin-bottom:12px;">
@@ -71,7 +76,7 @@ interface AttemptItem {
               <span class="badge">{{ a.status }}</span>
             </div>
             <div style="display:flex; gap:8px;">
-              <button class="secondary-action" (click)="openResult(a.id)" [disabled]="a.status !== 'completed'">Ver</button>
+              <button class="secondary-action" (click)="openAttempt(a)">Ver</button>
               <button class="secondary-action danger" (click)="deleteAttempt(a.id)" [disabled]="deleting[a.id]">{{ deleting[a.id] ? 'Eliminando...' : 'Eliminar' }}</button>
             </div>
           </div>
@@ -94,6 +99,7 @@ interface AttemptItem {
 export class HistoryPageComponent implements OnInit {
   attempts: AttemptItem[] = [];
   deleting: Record<string, boolean> = {};
+  deletingAll = false;
 
   pageIndex = 0;
   pageSize = 5;
@@ -137,8 +143,8 @@ export class HistoryPageComponent implements OnInit {
     let list = [...this.attempts];
     // Estado
     if (this.statusFilter !== 'all') {
-      if (this.statusFilter === 'completed') list = list.filter(a => a.status === 'completed');
-      else list = list.filter(a => a.status !== 'completed');
+      if (this.statusFilter === 'completed') list = list.filter(a => (a.status || '').toUpperCase() === 'COMPLETED');
+      else list = list.filter(a => (a.status || '').toUpperCase() !== 'COMPLETED');
     }
     // ID contains
     const q = this.idQuery.trim().toLowerCase();
@@ -173,6 +179,16 @@ export class HistoryPageComponent implements OnInit {
 
   openResult(id: string): void { this.router.navigate(['/test/results', id]); }
 
+  openAttempt(a: AttemptItem): void {
+    const statusUpper = (a.status || '').toUpperCase();
+    if (statusUpper === 'COMPLETED') {
+      this.openResult(a.id);
+    } else {
+      // En progreso: navegar al test para continuar o recuperar
+      this.router.navigate(['/test']);
+    }
+  }
+
   deleteAttempt(id: string): void {
     const token = this.session.getAccessToken();
     if (!token) { this.router.navigate(['/auth/login']); return; }
@@ -184,6 +200,30 @@ export class HistoryPageComponent implements OnInit {
       },
       error: (e) => { console.error('Error al eliminar intento', e); },
       complete: () => { this.deleting[id] = false; }
+    });
+  }
+
+  deleteAllAttempts(): void {
+    const token = this.session.getAccessToken();
+    if (!token) { this.router.navigate(['/auth/login']); return; }
+    const hasAny = this.attempts.length > 0;
+    if (!hasAny) return;
+    const confirmMsg = '¿Eliminar TODOS los intentos anteriores? Esta acción no se puede deshacer.';
+    if (!confirm(confirmMsg)) return;
+
+    this.deletingAll = true;
+    // Eliminar todos los intentos anteriores (independiente del estado)
+    const idsToDelete = this.attempts.map(a => a.id);
+    if (!idsToDelete.length) { this.deletingAll = false; return; }
+
+    let completed = 0;
+    idsToDelete.forEach(id => {
+      this.deleting[id] = true;
+      this.testService.deleteAssessment(id, token).subscribe({
+        next: () => { completed++; this.attempts = this.attempts.filter(a => a.id !== id); },
+        error: (e) => { console.error('Error eliminando intento', id, e); },
+        complete: () => { this.deleting[id] = false; if (completed >= idsToDelete.length) { this.deletingAll = false; this.pageIndex = 0; } }
+      });
     });
   }
 

@@ -6,8 +6,14 @@ export const materialsPageStyles = `
 .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
 .primary-action { background:#10b981; color:white; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; }
 .secondary-action { background:transparent; color:#111827; border:1px solid #d1d5db; border-radius:8px; padding:8px 12px; cursor:pointer; }
-.grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:12px; }
-.tile { border:1px solid #e5e7eb; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:6px; }
+.grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; }
+.tile { border:1px solid #e5e7eb; border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:8px; }
 .tile h4 { margin:0; font-size:16px; }
 .tile p { margin:0; color:#4b5563; }
+@media (max-width: 900px) {
+	.grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+	.grid { grid-template-columns: 1fr; }
+}
 `;

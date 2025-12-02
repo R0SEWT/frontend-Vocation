@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { profilePageStyles } from './profile-page.styles';
 import { UserProfile } from '../../core/validators/models/profile.models';
 import { ProfileService } from '../../core/services/profile.service';
@@ -11,7 +11,7 @@ import { INTEREST_AREA_CATALOG } from '../../core/constants/interest-area.consta
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   template: `
     <main class="main-shell">
       <header class="section-header">
@@ -20,7 +20,7 @@ import { INTEREST_AREA_CATALOG } from '../../core/constants/interest-area.consta
           <h2>{{ profile?.name || profile?.email || 'Perfil' }}</h2>
         </div>
         <div class="card-actions-inline">
-          <button class="secondary-action" (click)="goHome()">Volver a inicio</button>
+          <button class="secondary-action" [routerLink]="['/home']">Volver a inicio</button>
           <button class="icon-btn" (click)="logout()" title="Cerrar sesión" aria-label="Cerrar sesión">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 2v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -90,7 +90,8 @@ import { INTEREST_AREA_CATALOG } from '../../core/constants/interest-area.consta
 
               <div class="field">
                 <span>Intereses</span>
-                <div class="interests-container">
+                <div class="interests-panel">
+                  <div class="interests-container">
                   @for (interest of interestOptions; track interest) {
                     <label class="checkbox-option">
                       <input type="checkbox"
@@ -99,6 +100,7 @@ import { INTEREST_AREA_CATALOG } from '../../core/constants/interest-area.consta
                       {{ interest }}
                     </label>
                   }
+                  </div>
                 </div>
                 @if (form.controls['interests'].touched && form.controls['interests'].invalid) {
                   <small class="field-error">Selecciona al menos un interés.</small>
@@ -183,6 +185,12 @@ export class ProfilePageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProfile();
+    // Reload profile data on navigation back to /profile
+    this.router.events.subscribe((evt: any) => {
+      if (evt?.constructor?.name === 'NavigationEnd') {
+        this.loadProfile();
+      }
+    });
   }
 
   private loadProfile(): void {
@@ -216,6 +224,9 @@ export class ProfilePageComponent implements OnInit {
 
   cancel(): void {
     this.editing = false;
+    this.status = 'idle';
+    this.editFeedback = '';
+    this.form.enable();
   }
 
   save(): void {

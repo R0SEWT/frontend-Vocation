@@ -6,7 +6,13 @@ export const achievementsPageStyles = `
 .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
 .primary-action { background:#3b82f6; color:white; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; }
 .secondary-action { background:transparent; color:#111827; border:1px solid #d1d5db; border-radius:8px; padding:8px 12px; cursor:pointer; }
-.list { display:grid; gap:12px; }
-.item { display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid #e5e7eb; border-radius:10px; }
+.list { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; }
+.item { display:flex; flex-direction:column; gap:6px; padding:12px; border:1px solid #e5e7eb; border-radius:12px; }
 .badge { font-size:12px; padding:4px 8px; border-radius:999px; background:#f3f4f6; color:#374151; }
+@media (max-width: 900px) {
+	.list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+	.list { grid-template-columns: 1fr; }
+}
 `;
