@@ -79,7 +79,7 @@ const FALLBACK_QUESTIONS: TestQuestion[] = [
         <section class="question-section">
           <div class="question-card">
             <div class="question-header">
-              <span class="question-icon">💭</span>
+              <span class="question-icon" aria-hidden="true">?</span>
               <h2>{{ currentQuestion.question }}</h2>
             </div>
             <div class="options-grid">
@@ -286,7 +286,7 @@ export class TestPageComponent implements OnInit {
     this.route.paramMap.subscribe(params => {
       const resultId = params.get('id');
       
-      console.log('🔄 Cambio de ruta detectado:', { resultId, justCompletedTest: this.justCompletedTest });
+      console.log('Cambio de ruta detectado:', { resultId, justCompletedTest: this.justCompletedTest });
       
       // Si acabamos de completar un test nuevo, NO cargar resultados antiguos
       if (this.justCompletedTest && this.insights) {
@@ -312,7 +312,7 @@ export class TestPageComponent implements OnInit {
       if (!assessmentId || !insights) return;
       const key = `vocatio:insights:${assessmentId}`;
       localStorage.setItem(key, JSON.stringify(insights));
-      console.log('💾 Insights guardados localmente para', assessmentId);
+      console.log('Insights guardados localmente para', assessmentId);
     } catch (e) {
       console.warn('No se pudo guardar insights localmente:', e);
     }
@@ -340,7 +340,7 @@ export class TestPageComponent implements OnInit {
       if (!assessmentId) return;
       const key = `vocatio:insights:${assessmentId}`;
       localStorage.removeItem(key);
-      console.log('🧹 Insights locales eliminados para', assessmentId);
+      console.log('Insights locales eliminados para', assessmentId);
     } catch {}
   }
 
@@ -376,7 +376,7 @@ export class TestPageComponent implements OnInit {
       })
     ).subscribe({
       next: (result) => {
-        console.log('📊 Resultado recibido del backend:', result);
+        console.log('Resultado recibido del backend:', result);
         this.submissionResult = result;
         this.assessmentId = id;
         
@@ -397,8 +397,8 @@ export class TestPageComponent implements OnInit {
         // Transformar objetos {id, name} a strings si es necesario
         const careers = normalizeItems(rawCareers);
         
-        console.log('📋 Carreras procesadas:', careers);
-        console.log('📦 Datos completos del resultado:', {
+        console.log('Carreras procesadas:', careers);
+        console.log('Datos completos del resultado:', {
           hasTopAreas: !!result.topAreas,
           hasSuggestedCareers: !!result.suggestedCareers,
           hasQualities: !!(result as any).qualities,
@@ -486,13 +486,13 @@ export class TestPageComponent implements OnInit {
             profileSummary: summaryText
         };
         
-        console.log('✅ Insights configurados:', this.insights);
+        console.log('Insights configurados:', this.insights);
 
         // Si existen insights guardados localmente para este assessment, priorizarlos para fidelidad
         const saved = this.getInsightsLocal(id);
         if (saved) {
           this.insights = saved;
-          console.log('📥 Usando insights locales guardados para mantener consistencia histórica:', this.insights);
+          console.log('Usando insights locales guardados para mantener consistencia histórica:', this.insights);
         }
 
         // Intentar recuperar insights persistidos en el backend y priorizarlos si existen
@@ -516,7 +516,7 @@ export class TestPageComponent implements OnInit {
 
               this.insights = normalized;
               this.saveInsightsLocal(id, normalized);
-              console.log('☁️ Insights recuperados del backend y aplicados:', this.insights);
+              console.log('Insights recuperados del backend y aplicados:', this.insights);
             },
             error: () => {
               // Silencioso: mantenemos local o construido por backend
@@ -526,7 +526,7 @@ export class TestPageComponent implements OnInit {
       },
       error: (err) => {
         this.statusMessage = 'No se pudo cargar el resultado solicitado.';
-        console.error('❌ Error cargando resultado:', err);
+        console.error('Error cargando resultado:', err);
       }
     });
   }
@@ -691,7 +691,7 @@ export class TestPageComponent implements OnInit {
             
             // Actualizar el assessmentId con el valor real del backend
             if (response?.assessmentId) {
-              console.log('🔄 Actualizando assessmentId de', this.assessmentId, 'a', response.assessmentId);
+              console.log('Actualizando assessmentId de', this.assessmentId, 'a', response.assessmentId);
               this.assessmentId = String(response.assessmentId);
             }
             
@@ -720,8 +720,8 @@ export class TestPageComponent implements OnInit {
             const token = this.session.getAccessToken();
             if (token && this.assessmentId) {
               this.testService.saveInsights(this.assessmentId, token, this.insights).subscribe({
-                next: (res) => console.log('☁️ Insights guardados en backend:', res),
-                error: (err) => console.warn('⚠️ No se pudieron guardar insights en backend (se mantiene local):', err)
+                next: (res) => console.log('Insights guardados en backend:', res),
+                error: (err) => console.warn('No se pudieron guardar insights en backend (se mantiene local):', err)
               });
             }
             
@@ -744,8 +744,8 @@ export class TestPageComponent implements OnInit {
               viewMode: this.viewMode,
               currentUrl: window.location.href
             });
-            console.log('✅ TEST NUEVO COMPLETADO - NO DEBE CARGAR TEST ANTIGUO');
-            console.log('📊 Assessment ID del test completado:', this.assessmentId);
+            console.log('TEST NUEVO COMPLETADO - NO DEBE CARGAR TEST ANTIGUO');
+            console.log('Assessment ID del test completado:', this.assessmentId);
             console.log('🔑 Este ID debe ser el que aparece como último en el home:', this.assessmentId);
         },
         error: (err) => {

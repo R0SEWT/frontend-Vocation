@@ -40,6 +40,7 @@ interface ApiAssessmentResponse {
 interface AssessmentSummary {
   id: string;
   status: string;
+  completedAt?: string;
   progress?: {
     currentPage: number;
     totalPages: number;

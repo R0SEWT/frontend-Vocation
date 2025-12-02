@@ -29,7 +29,10 @@ import { UserProfile } from '../../core/validators/models/profile.models';
             <div class="button-group">
               <button class="primary-action" (click)="takeVocationalTest()">Realizar test vocacional</button>
               
-              @if (lastAssessmentId) {
+              @if (hasCompletedAttempts) {
+                <button class="secondary-action" (click)="toggleHistory()">
+                  {{ showHistory ? 'Ocultar intentos' : 'Ver intentos anteriores' }}
+                </button>
                 <button class="secondary-action" (click)="viewLastResult()">Ver último resultado</button>
               } @else {
                 <button class="secondary-action" (click)="refreshRecommendations()">Actualizar recomendaciones</button>
@@ -58,7 +61,7 @@ import { UserProfile } from '../../core/validators/models/profile.models';
                 <h3>{{ profile.name || 'Nombre no definido' }}</h3>
               </div>
               <button class="icon-btn" (click)="logout()" title="Cerrar sesión">
-                ⏻
+                Salir
               </button>
             </header>
             
@@ -86,7 +89,7 @@ import { UserProfile } from '../../core/validators/models/profile.models';
                 <form [formGroup]="profileConfigForm" (ngSubmit)="submitProfileConfig()" class="edit-form">
                   <div class="form-header">
                     <h4>Actualiza tu perfil</h4>
-                    <button type="button" class="close-btn" (click)="cancelProfileConfig()" [disabled]="editStatus === 'saving'">✕</button>
+                    <button type="button" class="close-btn" (click)="cancelProfileConfig()" [disabled]="editStatus === 'saving'">Cerrar</button>
                   </div>
                   
                   <label class="field">
@@ -177,6 +180,38 @@ import { UserProfile } from '../../core/validators/models/profile.models';
         </section>
       }
 
+      @if (showHistory) {
+        <section class="history-section">
+          <header class="section-header">
+            <h2>Intentos anteriores</h2>
+            <p class="subtitle">Selecciona un resultado para ver o eliminar.</p>
+          </header>
+
+          @if (!completedAttempts.length) {
+            <p class="feedback">sin intentos, realice uno nuevo</p>
+          } @else {
+            <div class="history-list">
+              @for (attempt of completedAttempts; track attempt.id) {
+                <div class="history-item">
+                  <div class="history-info">
+                    <span class="history-id">#{{ attempt.id }}</span>
+                    <span class="history-date">{{ formatDate(attempt.completedAt) }}</span>
+                  </div>
+                  <div class="history-actions">
+                    <button class="secondary-action small" (click)="openResult(attempt.id)">Ver</button>
+                    <button class="secondary-action danger small" [disabled]="deletingIds[attempt.id]" (click)="deleteAttempt(attempt.id)">
+                      {{ deletingIds[attempt.id] ? 'Eliminando...' : 'Eliminar' }}
+                    </button>
+                  </div>
+                </div>
+              } @empty {
+                <div class="empty-state"><p>sin intentos, realice uno nuevo</p></div>
+              }
+            </div>
+          }
+        </section>
+      }
+
       <section class="recommendations-section">
         <header class="section-header">
           <h2>Recursos Recomendados</h2>
@@ -194,7 +229,7 @@ import { UserProfile } from '../../core/validators/models/profile.models';
         <div class="resource-grid">
           @for (resource of resources; track resource.id) {
             <article class="resource-card">
-              <div class="resource-icon">📚</div>
+              <div class="resource-icon">Recurso</div>
               <div class="resource-info">
                 <h4>{{ resource.title }}</h4>
                 <p>{{ resource.description || 'Guía práctica para seguir avanzando.' }}</p>
@@ -222,6 +257,9 @@ export class HomePageComponent implements OnInit {
   statusMessage = '';
   recommendationMessage = 'Actualiza tus intereses para afinar el mapa vocacional.';
   loadingResources = false;
+  showHistory = false;
+  completedAttempts: any[] = [];
+  deletingIds: Record<string, boolean> = {};
   
   profileConfigForm: FormGroup;
   editingProfile = false;
@@ -230,6 +268,7 @@ export class HomePageComponent implements OnInit {
   editFeedback = '';
   deletingAccount = false;
   lastAssessmentId?: string;
+  get hasCompletedAttempts(): boolean { return this.completedAttempts.length > 0; }
 
   interestOptions: string[] = Object.keys(INTEREST_AREA_CATALOG);
 
@@ -275,7 +314,7 @@ export class HomePageComponent implements OnInit {
     // Reaccionar a solicitudes de refresco vía query params
     this.route.queryParamMap.subscribe(params => {
       if (params.has('refresh')) {
-        console.log('🔄 Refrescando historial por query param refresh');
+        console.log('Refrescando historial por query param refresh');
         this.checkAssessments();
       }
     });
@@ -293,25 +332,30 @@ export class HomePageComponent implements OnInit {
 
     this.testService.listAssessments(token).subscribe({
       next: (assessments) => {
-        console.log('📋 Todos los assessments:', assessments);
-        console.log('📊 Total de assessments recibidos:', assessments.length);
+        console.log('Todos los assessments:', assessments);
+        console.log('Total de assessments recibidos:', assessments.length);
         
         const completed = assessments.filter(a => a.status === 'COMPLETED');
-        console.log('✅ Assessments completados:', completed);
+        console.log('Assessments completados:', completed);
         console.log('📈 Total completados:', completed.length);
         
         if (completed.length > 0) {
           // Mostrar IDs ANTES de ordenar
-          console.log('🔢 IDs de completados (antes de ordenar):', completed.map(a => a.id));
+          console.log('IDs de completados (antes de ordenar):', completed.map(a => a.id));
           
           // Ordenar por ID descendente para obtener el más reciente
           const sorted = completed.sort((a, b) => Number(b.id) - Number(a.id));
           
-          console.log('🔢 IDs de completados (después de ordenar):', sorted.map(a => a.id));
-          console.log('🏆 El primero (más reciente) es:', sorted[0].id);
+          console.log('IDs de completados (después de ordenar):', sorted.map(a => a.id));
+          console.log('El primero (más reciente) es:', sorted[0].id);
           
           this.lastAssessmentId = sorted[0].id;
-          console.log('🆔 lastAssessmentId asignado:', this.lastAssessmentId);
+          this.completedAttempts = sorted.map(a => ({ 
+            id: a.id, 
+            // Algunos backends no exponen completedAt en el resumen; usar fallback si no está
+            completedAt: (a as any).completedAt ?? (a as any).updatedAt ?? undefined 
+          }));
+          console.log('lastAssessmentId asignado:', this.lastAssessmentId);
           // Limpiar cualquier mensaje anterior si hay intentos
           if (this.statusMessage?.includes('No hay intentos')) {
             this.statusMessage = '';
@@ -320,14 +364,15 @@ export class HomePageComponent implements OnInit {
           setTimeout(() => {
             // Evitar llamar si ya tenemos un ID establecido
             if (!this.lastAssessmentId) {
-              console.log('⏱️ Re-chequeo rápido de historial');
+              console.log('Re-chequeo rápido de historial');
               this.checkAssessments();
             }
           }, 800);
         } else {
-          console.log('⚠️ No hay assessments completados');
+          console.log('No hay assessments completados');
           // Asegurar que el botón muestre "Actualizar recomendaciones" y no "Ver último resultado"
           this.lastAssessmentId = undefined;
+          this.completedAttempts = [];
           // Mensaje claro para el usuario cuando no hay intentos
           this.statusMessage = 'sin intentos, realice uno nuevo';
         }
@@ -337,18 +382,62 @@ export class HomePageComponent implements OnInit {
   }
 
   viewLastResult(): void {
-    console.log('🔍 viewLastResult llamado. lastAssessmentId:', this.lastAssessmentId);
-    console.log('🔍 Tipo de lastAssessmentId:', typeof this.lastAssessmentId);
+    console.log('viewLastResult llamado. lastAssessmentId:', this.lastAssessmentId);
+    console.log('Tipo de lastAssessmentId:', typeof this.lastAssessmentId);
     if (this.lastAssessmentId) {
-      console.log('📍 Navegando a /test/results/' + this.lastAssessmentId);
-      console.log('📍 Array de navegación:', ['/test/results', this.lastAssessmentId]);
+      console.log('Navegando a /test/results/' + this.lastAssessmentId);
+      console.log('Array de navegación:', ['/test/results', this.lastAssessmentId]);
       this.router.navigate(['/test/results', this.lastAssessmentId]);
     } else {
-      console.error('❌ No hay lastAssessmentId disponible');
+      console.error('No hay lastAssessmentId disponible');
       this.statusMessage = 'Aún cargando historial. Intenta nuevamente en unos segundos.';
       // Lanzar una recarga de historial inmediata
       this.checkAssessments();
     }
+  }
+
+  toggleHistory(): void {
+    this.showHistory = !this.showHistory;
+  }
+
+  openResult(id: string): void {
+    this.router.navigate(['/test/results', id]);
+  }
+
+  deleteAttempt(id: string): void {
+    const confirmDelete = confirm('¿Eliminar este intento? Esta acción no se puede deshacer.');
+    if (!confirmDelete) return;
+    const token = this.session.getAccessToken();
+    if (!token) return;
+    this.deletingIds = { ...this.deletingIds, [id]: true };
+    this.testService.deleteAssessment(id, token).subscribe({
+      next: () => {
+        this.removeInsightsLocal(id);
+        this.completedAttempts = this.completedAttempts.filter(a => a.id !== id);
+        if (this.lastAssessmentId === id) {
+          // Recalcular el último
+          const nextLast = this.completedAttempts[0]?.id;
+          this.lastAssessmentId = nextLast;
+        }
+        if (!this.completedAttempts.length) {
+          this.statusMessage = 'sin intentos, realice uno nuevo';
+        }
+      },
+      error: (err) => {
+        console.error('Error eliminando intento', err);
+      },
+      complete: () => {
+        const { [id]: _, ...rest } = this.deletingIds;
+        this.deletingIds = rest;
+      }
+    });
+  }
+
+  private removeInsightsLocal(assessmentId: string): void {
+    try {
+      const key = `vocatio:insights:${assessmentId}`;
+      localStorage.removeItem(key);
+    } catch {}
   }
 
   private loadProfile(): void {
@@ -573,6 +662,16 @@ export class HomePageComponent implements OnInit {
       age: this.profile?.age ?? null,
       grade: this.profile?.grade ?? '',
       interests: this.profile?.interests ?? []
+    });
+  }
+
+  formatDate(dateString?: string): string {
+    if (!dateString) return 'Fecha no disponible';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
     });
   }
 }
